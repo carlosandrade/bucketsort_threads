@@ -12,10 +12,10 @@ public class BucketSort{
         int[] vetor = new int[] {1,3,4,6,4,2,9,1,2,9};
         
         //Cria o vetor de buckets
-        Bucket[] buckets = new Bucket[qtdElementosVetor];  
+        Bucket[] buckets = new Bucket[qtdThreads];  
         
         //Inicializa o vetor de buckets
-        for(int i=0;i<qtdElementosVetor;i++)
+        for(int i=0;i<qtdThreads;i++)
             buckets[i] = new Bucket(qtdElementosPorBucket);
             
         //Criterio de separacao dos elementos por bucket de modo que os elementos em um bucket seja heterogeneo
@@ -23,7 +23,7 @@ public class BucketSort{
         separaElementosDoVetorNosBuckets(vetor,buckets);
         
         //Sort dos elementos de cada bucket por insertion sort
-        for(int i=0;i<qtdElementosVetor;i++)
+        for(int i=0;i<qtdThreads;i++)
             insertionSort(buckets[i].bucket);
         /*    
         //Concatenacao dos buckets em um vetor
