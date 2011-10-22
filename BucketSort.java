@@ -1,15 +1,23 @@
 import java.util.ArrayList;
+import java.util.Random;
 
 public class BucketSort{
     
     
     public static void main(String args[])
-    {int qtdElementosVetor = 10;
-     int qtdThreads = 2;
+    {int qtdElementosVetor = 100;
+     int qtdThreads = 5;
      int qtdElementosPorBucket = qtdElementosVetor/qtdThreads;
+     Random generator = new Random();
+     
         //Operacao para carregar numeros em um vetor e obter quantidade de elementos do vetor
             //int[] vetor = new int[qtdElementosVetor];
-        int[] vetor = new int[] {1,3,4,6,4,2,9,1,2,9};
+        //int[] vetor = new int[] {1,3,4,6,4,2,9,1,2,9};
+        
+        int[] vetor = new int[qtdElementosVetor];
+        for(int i=0;i<qtdElementosVetor;i++)
+            vetor[i] = generator.nextInt(5001+5000)-5000; //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
+        
         
         //Cria o vetor de buckets
         Bucket[] buckets = new Bucket[qtdThreads];  
@@ -48,7 +56,7 @@ public class BucketSort{
     private static void separaElementosDoVetorNosBuckets(int[] vetor, Bucket[]buckets)
     {
         for(int i = 0; i<vetor.length;i++)
-            buckets[decidePosicaoDoBucket(vetor,vetor[i],buckets)].add(vetor[i]);
+            buckets[decidePosicaoDoBucket(vetor[i],buckets)].add(vetor[i]);
     }
     /**
         Este metodo dinamicamente atribui a cada bucket uma faixa de intervalo baseado
@@ -67,7 +75,7 @@ public class BucketSort{
         devem necessariamente obedecer a uma faixa de intervalos. A heterogeneidade dos elementos
         de cada bucket deve obedecer, portanto, a esse intervalo.
     */
-    private static int decidePosicaoDoBucket(int[] vetor, int elementoAtual, Bucket[]buckets)
+    private static int decidePosicaoDoBucket(int elementoAtual, Bucket[]buckets)
     {
         if(elementoAtual == 0)
             return elementoAtual;
@@ -76,7 +84,7 @@ public class BucketSort{
             
         for(int i =1; i<buckets.length;i++)
         {
-            if(elementoAtual <= ((vetor.length/buckets.length)*i))
+            if(elementoAtual <= ((5000/buckets.length)*i))
                 return (i-1); //-1 pois o vetor comeca a partir de 0. 
         }
         return (buckets.length - 1); 
