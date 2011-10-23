@@ -1,5 +1,7 @@
 import java.util.ArrayList;
 import java.util.Random;
+import java.io.*;
+
 
 public class BucketSort implements Runnable{
     int bucketCounter = 0;
@@ -25,15 +27,50 @@ public class BucketSort implements Runnable{
     public static void main(String args[])
     {long start,end;
         BucketSort bucketSort = new BucketSort();
-        int qtdElementosVetor = 300;
+        int qtdElementosVetor;
         int qtdThreads = 16;
+        int[] vetor = null;
         Random generator = new Random();
-     
-        //Gera vetor de numeros aleatorios
-        int[] vetor = new int[qtdElementosVetor];
+
+
+      /*
         for(int i=0;i<qtdElementosVetor;i++)
             vetor[i] = generator.nextInt(5001+5000)-5000; //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
+      */
+        //Le arquivo segundo especificacao
+        int contElementosVetor = 0;
         
+        try{
+        // Open the file that is the first 
+        // command line parameter
+        FileInputStream fstream = new FileInputStream("randomInput.txt");
+        // Get the object of DataInputStream
+        DataInputStream in = new DataInputStream(fstream);
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String strLine;
+        //Read File Line By Line
+        qtdElementosVetor = Integer.parseInt(br.readLine());
+        
+        //Gera vetor de numeros aleatorios
+        vetor = new int[qtdElementosVetor];
+        
+        while ((strLine = br.readLine()) != null)   {
+            vetor[contElementosVetor] = Integer.parseInt(strLine);
+            contElementosVetor++;
+        }
+        //Close the input stream
+        in.close();
+          }catch (Exception e){//Catch exception if any
+        System.err.println("Error: " + e.getMessage());
+        }
+/*
+        for(int j=0;j<contElementosVetor;j++)
+            System.out.println(vetor[j]);
+        System.out.println(contElementosVetor);
+        System.exit(0);
+
+        System.out.println(vetor.length);
+*/        
         //Cria o vetor de buckets
         bucketSort.buckets = new Bucket[qtdThreads];  
         
