@@ -5,8 +5,8 @@ public class BucketSort{
     
     
     public static void main(String args[])
-    {int qtdElementosVetor = 100;
-     int qtdThreads = 10;
+    {int qtdElementosVetor = 300;
+     int qtdThreads = 16;
      int qtdElementosPorBucket = qtdElementosVetor/qtdThreads;
      Random generator = new Random();
      
@@ -41,7 +41,7 @@ public class BucketSort{
         
         //Imprime os buckets em ordem crescente
         for(int i=0; i < buckets.length;i++)
-            System.out.println("Bucket "+i+": "+buckets[i]);
+            System.out.println("Bucket "+i+", qtd elemns: {"+buckets[i].bucket.size()+"}:"+buckets[i]);
         
         /*
         //Impressao dos valores depois do sort
