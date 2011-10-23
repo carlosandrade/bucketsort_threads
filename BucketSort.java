@@ -23,10 +23,10 @@ public class BucketSort implements Runnable{
         return myBucket;
     }
     public static void main(String args[])
-    {   
+    {long start,end;
         BucketSort bucketSort = new BucketSort();
-        int qtdElementosVetor = 100;
-        int qtdThreads = 5;
+        int qtdElementosVetor = 300;
+        int qtdThreads = 2;
         Random generator = new Random();
      
         //Gera vetor de numeros aleatorios
@@ -40,15 +40,23 @@ public class BucketSort implements Runnable{
         //Inicializa o vetor de buckets
         for(int i=0;i<qtdThreads;i++)
             bucketSort.buckets[i] = new Bucket();
+        
+        start = System.currentTimeMillis();
             
         //Criterio de separacao dos elementos por bucket de modo que os elementos 
         //em um bucket seja heterogeneo e possuam a mesma quantidade
         separaElementosDoVetorNosBuckets(vetor,bucketSort.buckets);
         
+        end = System.currentTimeMillis();
+        
+        System.out.println("Tempo de execucao de alocacao foi: "+(end-start)+"ms.");
+        
         //Inicia a criacao das threads para cuidar de cada bucket
         Thread[] threads = new Thread[qtdThreads];
         for(int i=0;i<qtdThreads;i++)
             threads[i] = new Thread(bucketSort);
+        
+        start = System.currentTimeMillis();
             
         //Inicie todas as threads para que elas apliquem InsertionSort em seus buckets
         for(int i=0;i<qtdThreads;i++)
@@ -62,10 +70,18 @@ public class BucketSort implements Runnable{
                 throw new RuntimeException(e);
             }
         
+        end = System.currentTimeMillis();
+        
+        System.out.println("Tempo de execucao de ordenacao foi: "+(end-start)+"ms.");
+        System.out.println();
+        
             
         //Imprime os buckets em ordem crescente simulando a concatenacao 
         for(int i=0; i < bucketSort.buckets.length;i++)
+        {
             System.out.println("Bucket "+i+", qtd elemns: {"+bucketSort.buckets[i].bucket.size()+"}:"+bucketSort.buckets[i]);
+            System.out.println();
+        }
     }
     private static void separaElementosDoVetorNosBuckets(int[] vetor, Bucket[]buckets)
     {
