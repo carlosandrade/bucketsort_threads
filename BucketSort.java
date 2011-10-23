@@ -1,13 +1,33 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-public class BucketSort{
+public class BucketSort implements Runnable{
+    int bucketCounter = 0;
+    Bucket[] buckets;
     
-    
+    public BucketSort()
+    {
+        //this.buckets = buckets;
+    }
+     
+    public void run()
+    {int myBucket;
+        myBucket = takeBucket(); //Apenas uma thread por vez pode pegar um bucket para si
+        insertionSort(buckets[myBucket].bucket); //Executar a ordenacao no bucket, entretanto, pode ser feito quando ela bem entender!
+        System.out.println("Thread com bucket "+myBucket+" terminou a ordenacao!");
+    }
+    synchronized int takeBucket()
+    {int myBucket;
+        myBucket = bucketCounter;
+        bucketCounter++;
+        return myBucket;
+    }
     public static void main(String args[])
-    {int qtdElementosVetor = 300;
-     int qtdThreads = 1;
-     Random generator = new Random();
+    {   
+        BucketSort bucketSort = new BucketSort();
+        int qtdElementosVetor = 100;
+        int qtdThreads = 5;
+        Random generator = new Random();
      
         //Gera vetor de numeros aleatorios
         int[] vetor = new int[qtdElementosVetor];
@@ -16,19 +36,29 @@ public class BucketSort{
         
         
         //Cria o vetor de buckets
-        Bucket[] buckets = new Bucket[qtdThreads];  
+        bucketSort.buckets = new Bucket[qtdThreads];  
         
         //Inicializa o vetor de buckets
         for(int i=0;i<qtdThreads;i++)
-            buckets[i] = new Bucket();
+            bucketSort.buckets[i] = new Bucket();
             
         //Criterio de separacao dos elementos por bucket de modo que os elementos em um bucket seja heterogeneo
         //e possuam a mesma quantidade
-        separaElementosDoVetorNosBuckets(vetor,buckets);
+        separaElementosDoVetorNosBuckets(vetor,bucketSort.buckets);
         
+        //Inicia a criacao das threads para cuidar de cada bucket
+        Thread[] threads = new Thread[qtdThreads];
+        for(int i=0;i<qtdThreads;i++)
+            threads[i] = new Thread(bucketSort);
+        for(int i=0;i<qtdThreads;i++)
+            threads[i].start();
+        
+        /*
         //Sort dos elementos de cada bucket por insertion sort
         for(int i=0;i<qtdThreads;i++)
             insertionSort(buckets[i].bucket);
+            
+        */
         /*    
         //Concatenacao dos buckets em um vetor
         for(int i=0;i<qtdElementosVetor;i = i + buckets[i].bucket.length)
@@ -39,8 +69,8 @@ public class BucketSort{
         */
         
         //Imprime os buckets em ordem crescente
-        for(int i=0; i < buckets.length;i++)
-            System.out.println("Bucket "+i+", qtd elemns: {"+buckets[i].bucket.size()+"}:"+buckets[i]);
+        for(int i=0; i < bucketSort.buckets.length;i++)
+            System.out.println("Bucket "+i+", qtd elemns: {"+bucketSort.buckets[i].bucket.size()+"}:"+bucketSort.buckets[i]);
         
         /*
         //Impressao dos valores depois do sort

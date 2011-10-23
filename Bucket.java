@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 
+
 public class Bucket{
     public ArrayList<Integer> bucket;
    // public int posicaoAtualNoBucket = 0;
