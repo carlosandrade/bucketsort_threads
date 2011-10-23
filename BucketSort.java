@@ -10,10 +10,7 @@ public class BucketSort{
      int qtdElementosPorBucket = qtdElementosVetor/qtdThreads;
      Random generator = new Random();
      
-        //Operacao para carregar numeros em um vetor e obter quantidade de elementos do vetor
-            //int[] vetor = new int[qtdElementosVetor];
-        //int[] vetor = new int[] {1,3,4,6,4,2,9,1,2,9};
-        
+        //Gera vetor de numeros aleatorios
         int[] vetor = new int[qtdElementosVetor];
         for(int i=0;i<qtdElementosVetor;i++)
             vetor[i] = generator.nextInt(5001+5000)-5000; //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
@@ -79,8 +76,7 @@ public class BucketSort{
     {int i=0;
         if(elementoAtual == 0)
             return buckets.length/2;
-        
-            
+                      
         int elementoAtualEmModulo = elementoAtual;
         
         if(elementoAtualEmModulo<0)
@@ -96,41 +92,10 @@ public class BucketSort{
                     return((buckets.length/2) + i);
             }
         }
-        
-        //Se saiu do loop entao e um dos valores limites    
-        
-        //System.out.println("Ouch, valor e: "+elementoAtual);
-        
         if(elementoAtual < 0)
             return (buckets.length/2 - i); 
         else
             return((buckets.length/2) + i);
-            
-       /*     
-        if(elementoAtual < 0)
-        {
-            elementoAtual = elementoAtual*-1;
-            for(int i=1;i<buckets.length;i++)
-            {
-                if(elementoAtual <= ((5000/buckets.length)*i))
-                {
-                    if(elementoAtual)
-                }
-                    return (i-1); //-1 pois o vetor comeca a partir de 0.
-            }
-            return (i-1);
-        }
-        
-            
-        for(int i =buckets.length/2; i<buckets.length;i++)
-        {
-            if(elementoAtual <= ((5000/buckets.length)*i))
-                return (i-1); //-1 pois o vetor comeca a partir de 0. 
-        }
-        return (buckets.length - 1); 
-        
-    }
-    */
     }
     public static void insertionSort(ArrayList<Integer> a) {
         for (int i=1; i < a.size(); i++) {
