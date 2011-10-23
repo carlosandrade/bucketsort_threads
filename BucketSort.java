@@ -7,10 +7,7 @@ public class BucketSort implements Runnable{
     int bucketCounter = 0;
     Bucket[] buckets;
     
-    public BucketSort()
-    {
-        //this.buckets = buckets;
-    }
+    public BucketSort() {}
      
     public void run()
     {int myBucket;
@@ -32,12 +29,6 @@ public class BucketSort implements Runnable{
         int[] vetor = null;
         Random generator = new Random();
 
-
-      /*
-        for(int i=0;i<qtdElementosVetor;i++)
-            vetor[i] = generator.nextInt(5001+5000)-5000; //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
-      */
-        //Le arquivo segundo especificacao
         int contElementosVetor = 0;
         
         try{
@@ -63,14 +54,7 @@ public class BucketSort implements Runnable{
           }catch (Exception e){//Catch exception if any
         System.err.println("Error: " + e.getMessage());
         }
-/*
-        for(int j=0;j<contElementosVetor;j++)
-            System.out.println(vetor[j]);
-        System.out.println(contElementosVetor);
-        System.exit(0);
 
-        System.out.println(vetor.length);
-*/        
         //Cria o vetor de buckets
         bucketSort.buckets = new Bucket[qtdThreads];  
         
