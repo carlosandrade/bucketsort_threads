@@ -12,17 +12,6 @@ public class Bucket{
     public void add(int elemento)
     {
         bucket.add(elemento);
-        
-        /*
-        if(posicaoAtualNoBucket < bucket.length)
-        {
-            bucket[posicaoAtualNoBucket] = elemento;
-            posicaoAtualNoBucket++;
-        }
-        else
-            System.out.println("Oops..algo deu errado, nao cabe nesse bucket mais nenhum elemento");
-            
-        */
     }
     public String toString(){
         String string = "";

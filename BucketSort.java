@@ -34,7 +34,6 @@ public class BucketSort implements Runnable{
         for(int i=0;i<qtdElementosVetor;i++)
             vetor[i] = generator.nextInt(5001+5000)-5000; //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
         
-        
         //Cria o vetor de buckets
         bucketSort.buckets = new Bucket[qtdThreads];  
         
@@ -42,42 +41,31 @@ public class BucketSort implements Runnable{
         for(int i=0;i<qtdThreads;i++)
             bucketSort.buckets[i] = new Bucket();
             
-        //Criterio de separacao dos elementos por bucket de modo que os elementos em um bucket seja heterogeneo
-        //e possuam a mesma quantidade
+        //Criterio de separacao dos elementos por bucket de modo que os elementos 
+        //em um bucket seja heterogeneo e possuam a mesma quantidade
         separaElementosDoVetorNosBuckets(vetor,bucketSort.buckets);
         
         //Inicia a criacao das threads para cuidar de cada bucket
         Thread[] threads = new Thread[qtdThreads];
         for(int i=0;i<qtdThreads;i++)
             threads[i] = new Thread(bucketSort);
+            
+        //Inicie todas as threads para que elas apliquem InsertionSort em seus buckets
         for(int i=0;i<qtdThreads;i++)
             threads[i].start();
-        
-        /*
-        //Sort dos elementos de cada bucket por insertion sort
-        for(int i=0;i<qtdThreads;i++)
-            insertionSort(buckets[i].bucket);
             
-        */
-        /*    
-        //Concatenacao dos buckets em um vetor
-        for(int i=0;i<qtdElementosVetor;i = i + buckets[i].bucket.length)
-        {
-            for(int j=0; j<buckets[i].bucket.length;j++)
-                vetor[i] = buckets[i].bucket[j];
-        }
-        */
+        //Espere que todas as threads terminem a ordenacao
+        try {
+            for(int i=0;i<qtdThreads;i++)
+                threads[i].join();
+            }catch (InterruptedException e){
+                throw new RuntimeException(e);
+            }
         
-        //Imprime os buckets em ordem crescente
+            
+        //Imprime os buckets em ordem crescente simulando a concatenacao 
         for(int i=0; i < bucketSort.buckets.length;i++)
             System.out.println("Bucket "+i+", qtd elemns: {"+bucketSort.buckets[i].bucket.size()+"}:"+bucketSort.buckets[i]);
-        
-        /*
-        //Impressao dos valores depois do sort
-        for(int i=0; i<qtdElementosVetor;i++)
-            System.out.print(vetor[i] + " ");
-        System.out.println();
-        */
     }
     private static void separaElementosDoVetorNosBuckets(int[] vetor, Bucket[]buckets)
     {
