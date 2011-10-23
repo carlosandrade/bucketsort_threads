@@ -26,7 +26,7 @@ public class BucketSort implements Runnable{
     {long start,end;
         BucketSort bucketSort = new BucketSort();
         int qtdElementosVetor = 300;
-        int qtdThreads = 2;
+        int qtdThreads = 16;
         Random generator = new Random();
      
         //Gera vetor de numeros aleatorios
