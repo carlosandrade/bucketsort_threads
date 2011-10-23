@@ -4,7 +4,7 @@ public class Bucket{
     public ArrayList<Integer> bucket;
    // public int posicaoAtualNoBucket = 0;
     
-    public Bucket(int bucketSize)
+    public Bucket()
     {
         bucket = new ArrayList<Integer>();
     }

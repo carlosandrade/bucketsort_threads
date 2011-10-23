@@ -6,8 +6,7 @@ public class BucketSort{
     
     public static void main(String args[])
     {int qtdElementosVetor = 300;
-     int qtdThreads = 16;
-     int qtdElementosPorBucket = qtdElementosVetor/qtdThreads;
+     int qtdThreads = 1;
      Random generator = new Random();
      
         //Gera vetor de numeros aleatorios
@@ -21,7 +20,7 @@ public class BucketSort{
         
         //Inicializa o vetor de buckets
         for(int i=0;i<qtdThreads;i++)
-            buckets[i] = new Bucket(qtdElementosPorBucket);
+            buckets[i] = new Bucket();
             
         //Criterio de separacao dos elementos por bucket de modo que os elementos em um bucket seja heterogeneo
         //e possuam a mesma quantidade
