@@ -6,7 +6,7 @@ public class BucketSort{
     
     public static void main(String args[])
     {int qtdElementosVetor = 100;
-     int qtdThreads = 5;
+     int qtdThreads = 10;
      int qtdElementosPorBucket = qtdElementosVetor/qtdThreads;
      Random generator = new Random();
      
@@ -44,7 +44,7 @@ public class BucketSort{
         
         //Imprime os buckets em ordem crescente
         for(int i=0; i < buckets.length;i++)
-            System.out.println("Bucket: "+i+" "+buckets[i]);
+            System.out.println("Bucket "+i+": "+buckets[i]);
         
         /*
         //Impressao dos valores depois do sort
@@ -76,19 +76,61 @@ public class BucketSort{
         de cada bucket deve obedecer, portanto, a esse intervalo.
     */
     private static int decidePosicaoDoBucket(int elementoAtual, Bucket[]buckets)
-    {
+    {int i=0;
         if(elementoAtual == 0)
-            return elementoAtual;
-        else if(elementoAtual < 0)
-            elementoAtual = elementoAtual * -1;
+            return buckets.length/2;
+        
             
-        for(int i =1; i<buckets.length;i++)
+        int elementoAtualEmModulo = elementoAtual;
+        
+        if(elementoAtualEmModulo<0)
+            elementoAtualEmModulo = elementoAtualEmModulo*-1;
+            
+        for(;i<(buckets.length/2);i++)
+        {
+            if(elementoAtualEmModulo < ((5000/((float)buckets.length/2))*(i+1)))
+            {
+                if(elementoAtual < 0)
+                    return((buckets.length/2) - (i+1));
+                else
+                    return((buckets.length/2) + i);
+            }
+        }
+        
+        //Se saiu do loop entao e um dos valores limites    
+        
+        //System.out.println("Ouch, valor e: "+elementoAtual);
+        
+        if(elementoAtual < 0)
+            return (buckets.length/2 - i); 
+        else
+            return((buckets.length/2) + i);
+            
+       /*     
+        if(elementoAtual < 0)
+        {
+            elementoAtual = elementoAtual*-1;
+            for(int i=1;i<buckets.length;i++)
+            {
+                if(elementoAtual <= ((5000/buckets.length)*i))
+                {
+                    if(elementoAtual)
+                }
+                    return (i-1); //-1 pois o vetor comeca a partir de 0.
+            }
+            return (i-1);
+        }
+        
+            
+        for(int i =buckets.length/2; i<buckets.length;i++)
         {
             if(elementoAtual <= ((5000/buckets.length)*i))
                 return (i-1); //-1 pois o vetor comeca a partir de 0. 
         }
         return (buckets.length - 1); 
         
+    }
+    */
     }
     public static void insertionSort(ArrayList<Integer> a) {
         for (int i=1; i < a.size(); i++) {
