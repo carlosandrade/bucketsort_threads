@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Random;
 import java.io.*;
 
 
@@ -27,7 +26,6 @@ public class BucketSort implements Runnable{
         int qtdElementosVetor;
         int qtdThreads = 16;
         int[] vetor = null;
-        Random generator = new Random();
 
         int contElementosVetor = 0;
         
@@ -149,7 +147,7 @@ public class BucketSort implements Runnable{
         if(elementoAtual < 0)
             return (buckets.length/2 - i); 
         else
-            return((buckets.length/2) + i);
+            return((buckets.length/2) + i-1); //So ocorre quando elemento igual a 5000
     }
     public static void insertionSort(ArrayList<Integer> a) {
         for (int i=1; i < a.size(); i++) {

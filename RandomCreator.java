@@ -11,13 +11,13 @@ public class RandomCreator{
     {
         //Gera vetor de numeros aleatorios
          int valor;
-         int qtdElementosVetor = 300;
+         int qtdElementosVetor = 100000;
          Random generator = new Random();
          
          
          try{
            // Create file 
-           FileWriter fstream = new FileWriter("randomInput.txt");
+           FileWriter fstream = new FileWriter("randomInput3.txt");
            BufferedWriter out = new BufferedWriter(fstream);
            
            out.write(Integer.toString(qtdElementosVetor));
