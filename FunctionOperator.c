@@ -199,6 +199,9 @@ void* tPerformSlaveCalculatorTasks(void* data)
 void* tPerformSlaveWriterTasks(void* data)
 {
 	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+	int resultado = pointerSTasksData->results;
+	
+	//Operacoes para salvar resultado em arquivo
 	
 	pthread_exit(NULL);
 	
