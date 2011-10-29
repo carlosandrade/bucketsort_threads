@@ -12,17 +12,32 @@ Obs: Por enquanto vou considerar que existem no codigo apenas um processo master
  
 
 //Libs
-#include <mpi.h>   
-#include <stdio.h>   
-#include <stdlib.h>
-#include <string.h>   
+	#include <mpi.h>   
+	#include <stdio.h>   
+	#include <stdlib.h>
+	#include <string.h>   
+	#include <pthread.h>
+
 
 //Constants
 #define ROOT_RANK 0   
 #define TAG 1 //Since its not important in this case the messageKey, let all of them be 1.
 
+	//Will be used to identify the threads
+		#define REQUESTER 0
+		#define CALCULATOR 1
+		#define WRITER 2
+
 void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
+void* tPerformSlaveRequesterTasks(void* data);
+
+//Necessary information among the threads
+		 struct slaveTasksData{
+			int messageImReceiving; //Should be shared between the requester and the calculator
+			int results;//Should be shared between the calculator and the writer
+			int myRank; //Just for identification inside the thread of the current MPI_Process
+		}sTasksData;
 
 
 //Main code
@@ -32,7 +47,7 @@ int main(int argc, char *argv[]){
 	int myRank,numberOfMPIProcesses;   
 	int rc;
 	int numberOfSlavesMasterShouldListen;
-  
+
 	//Initialize the environment   
 	MPI_Init(&argc, &argv); 
 	
@@ -105,9 +120,46 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc
 }
 void performSlaveTasks(int myRank, int rc)
 {
+		printf("I am a slave and my rank is %d!\n",myRank);
+		
+
+		struct slaveTasksData * pointerSTasksData = &sTasksData;
+		pointerSTasksData->myRank = myRank;
+		
+		
+		//Let 0 be the function requester, 1 the calculator and 2 the writer of the results, see macros above
+		pthread_t thread_id[3];
+		
+		//To get things going I should have 3 threads to help me out on this task..
+		
+		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveRequesterTasks, pointerSTasksData);	
+		
+		//I must wait the requester to obtain the data before I move any further
+		pthread_join( thread_id[REQUESTER], NULL);
+		
+		//Since I have the data, I may calculate it
+	//	pthread_create( &thread_id[CALCULATOR], NULL, tPerformSlaveCalculatorTasks, &slaveTasksData);	
+		
+		//I must wait the calculator to calculate the data before I attempt to write the results to the file
+	//	pthread_join( thread_id[CALCULATOR], NULL);
+		
+		//Since I have the results, I may write it to the file
+	//	pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, &slaveTasksData);	
+	
+	   pthread_exit(NULL);
+	
+		
+}
+void* tPerformSlaveRequesterTasks(void* data)
+{
+	struct slaveTasksData* slaveTasksData;
+	
+	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+		
 		//General message information
 		int 	numberOfMessageCopies	=	1;
 		int		messageKind				=	MPI_CHAR;
+		int rc;
 		MPI_Status status; //This is a necessary parameter but won't be used here
 		
 		//Content of the message sent
@@ -115,18 +167,26 @@ void performSlaveTasks(int myRank, int rc)
 		int		destinationRank			=	0;
 		
 		//Content of the message received
-		int 	messageImReceiving;
 		int		sourceRank				=	0;
 		
-		
-		printf("I am a slave and my rank is %d!\n",myRank);
 		
 		//Since I'm a slave, I should request my master for some data to work on.
 		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAG, MPI_COMM_WORLD);
 		
-		//I shall slack until master sending what I requested. Blocked until I receive the data.
-		rc = MPI_Recv(&messageImReceiving, numberOfMessageCopies, MPI_INT, sourceRank, TAG, MPI_COMM_WORLD, &status);
+		//I shall slack until master send what I requested. I'm blocked until I receive the data.
+		rc = MPI_Recv(&pointerSTasksData->messageImReceiving, numberOfMessageCopies, MPI_INT, sourceRank, TAG, MPI_COMM_WORLD, &status);
 		
 		//I should be a slave task and I should have received my data properly. 
-		printf("I'm the slave task %d. The data I received is %d\n",myRank,messageImReceiving);
+		printf("I'm the slave task %d. The data I received is %d\n",pointerSTasksData->myRank,pointerSTasksData->messageImReceiving);
+		
+		pthread_exit(NULL);
+	   
+}
+void* tPerformSlaveCalculatorTasks()
+{
+	
+}
+void* tPerformSlaveWriterTasks()
+{
+	
 }
