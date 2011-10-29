@@ -62,9 +62,11 @@ void* tPerformSlaveCalculatorTasksOver();
 
 //Necessary information among the threads
 		 struct slaveTasksData{
-			int messageImReceiving; //Should be shared between the requester and the calculator
+			char **messageImReceiving; //Should be shared between the requester and the calculator
 			int results;//Should be shared between the calculator and the writer
 			int myRank; //Just for identification inside the thread of the current MPI_Process
+			int sizeSlaveArray;
+		//	char **line;
 		}sTasksData;
 
 
@@ -117,6 +119,7 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//Content of the message received
 		char 	messageImReceiving;
 		int		sourceRank				=	0;
+		int 	currentDataPosition 	= 	0;
 
 		//Content of the message sent
 		int 	messageImSending 		=	9;
@@ -138,10 +141,17 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 	   	
 	   	char numElemen[100];
 	   
-
 		fgets(numElemen, sizeof(numElemen), fr);
 		numFuncoes = atoi(numElemen);
 		char line[numFuncoes][80];
+		/*
+		sTasksData.line = calloc(numFuncoes, sizeof(char*));
+		int i;
+		for(i=0; i<numFuncoes; i++)
+		  sTasksData.line[i] = calloc(80, sizeof(char));
+		*/
+		//printf("line2: %d, e line: %d\n",sizeof(line2),sizeof(sTasksData.line));
+	//		exit(0);
 		
 		int j=0;
 	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) 
@@ -152,22 +162,27 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//Alright, I, the master, am done loading all the text file. Now I need to separate the original data to my slaves.
 		
 		//Well, I must give each slave process the same or almost the same quantity to work on so:
-		
+		for(j=0;j<numFuncoes;j++)
+			puts(line[j]);
+			
+//		exit(0);
 		
 		//guardando em n_p o tamanho dos subvetores   
-		int sizeSlaveArray;
+		//int sizeSlaveArray;
 		
 		if(numberOfSlaveProcess!=0)
-			numFuncoes/numberOfSlaveProcess;   
+			sTasksData.sizeSlaveArray = numFuncoes/numberOfSlaveProcess;   
+			
+		printf("Aqui size salve array e: %d\n",sTasksData.sizeSlaveArray);
 
 		//corrigindo caso tenha sido arredondado para baixo   
-		if(sizeSlaveArray*numberOfSlaveProcess < numFuncoes) sizeSlaveArray++;   
+		if(sTasksData.sizeSlaveArray*numberOfSlaveProcess < numFuncoes) sTasksData.sizeSlaveArray++;   
 
 		//alocando o vetor de resultado (contera as posicoes onde se encontra X)  int res[n]
 		//res = (int *) calloc(n,sizeof(int));  
 		
 		if(numberOfSlaveProcess!=0)
-			printf("Sub-vector sizes: %d\n",sizeSlaveArray);
+			printf("Sub-vector sizes: %d\n",sTasksData.sizeSlaveArray);
 		
 		
 
@@ -186,11 +201,20 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			//I should answer him properly..
 			destinationRank = slaveRankWhoSentTheRequest;
 
-			//I should also be careful not to send the same part of the data to different slave processes so..
-			messageImSending++; //Gets the next portion of the data
-
 			//Send data to the slave process that requested it
-		  	rc = MPI_Send(&messageImSending, numberOfMessageCopies, MPI_INT, destinationRank, TAG, MPI_COMM_WORLD);
+			//printf("Testando algo aqui 676: %s\n",sTasksData.line[0]);
+			
+//			printf("sizeslavearray? %d\n",sTasksData.sizeSlaveArray);
+//			printf("count vai ficar? %d\n",sTasksData.sizeSlaveArray*80);
+
+		  	rc = MPI_Send(&line[currentDataPosition], sTasksData.sizeSlaveArray*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);
+
+
+			//I should also be careful not to send the same part of the data to different slave processes so..
+			printf("Valor de currentDataPosition: %d\n",currentDataPosition);
+			currentDataPosition += sTasksData.sizeSlaveArray;
+			if(currentDataPosition > numFuncoes)
+				currentDataPosition = numFuncoes; //Not quite sure if this occurs, but just in case..; //Gets the next portion of the data
 
 			//One less slave to deal with.
 			numberOfSlavesMasterShouldListen--;
@@ -231,7 +255,7 @@ void performSlaveTasks(int myRank, int rc)
 		//To get things going I should have 3 threads to help me out on this task..
 		
 		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveRequesterTasks, pointerSTasksData);	
-		
+	
 		//I must wait the requester to obtain the data before I move any further
 		pthread_join( thread_id[REQUESTER], NULL);
 		
@@ -275,25 +299,76 @@ void* tPerformSlaveRequesterTasks(void* data)
 		int		sourceRank				=	0;
 			
 		
+		
+		char subarray [150][80];
+		int a,b;
+		for(a=0;a<150;a++)
+		{
+			for(b=0;b<80;b++)
+			{
+				subarray[a][b] = '9';
+			}
+		}
+		
+		/*
+		//Initialize the sub-part of the original array so that I , the slave, may work on my share of work
+		sTasksData.messageImReceiving = calloc(151, sizeof(char*));
+		int i;
+		for(i=0; i<151; i++)
+		  sTasksData.messageImReceiving[i] = calloc(80, sizeof(char));
+		*/
+//	int bla[2][80] = {0};
+
+//	int k;
+	//printf("bla %d\n",sizeof(sTasksData.messageImReceiving));
+//	for(i=0;i<2;i++)
+//		{	printf("entrou no for \n");
+//			
+//			for(k=0;k<80;k++)
+//				printf("%d\n",bla[i][k]);
+//		}
+		
+		
 		//Since I'm a slave, I should request my master for some data to work on.
 		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAG, MPI_COMM_WORLD);
 		
-		//I shall slack until master send what I requested. I'm blocked until I receive the data.
-		rc = MPI_Recv(&pointerSTasksData->messageImReceiving, numberOfMessageCopies, MPI_INT, sourceRank, TAG, MPI_COMM_WORLD, &status);
+		
+//		printf("outro teste: %d\n",80);
+	
+//		//I shall slack until master send what I requested. I'm blocked until I receive the data.
+
+		rc = MPI_Recv(&subarray, 2000, MPI_CHAR, sourceRank, TAG, MPI_COMM_WORLD, &status);
+		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
+		for(a=0;a<2;a++)
+		{ 
+			for(b=0;b<5;b++)
+			{
+				printf("%c",subarray[a][b]);
+			}
+			printf("\n");
+		}						
+						
+													
+		
+		//printf("Testando algo aqui2: %s\n",subarray[6]);													
+//		printf("Testando algo aqui: %s\n",sTasksData.messageImReceiving[0]);
 		
 		//I should be a slave task and I should have received my data properly. 
-		printf("I'm the slave task %d. The data I received is %d\n",pointerSTasksData->myRank,pointerSTasksData->messageImReceiving);
+//		for(i=0;i<2;i++)
+//			printf("Azure %s\n",pointerSTasksData->messageImReceiving[i]);
+			//printf("I'm the slave task %d. The data I received is %s\n",pointerSTasksData->myRank,pointerSTasksData->messageImReceiving[i]);
+			
 		
 		pthread_exit(NULL);
 	   
 }
 void* tPerformSlaveCalculatorTasks(void* data)
 {
-	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
-	pointerSTasksData->results = pointerSTasksData->messageImReceiving;
-	pointerSTasksData->results += 10;
-	printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
-	pthread_exit(NULL);
+	//struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+	//pointerSTasksData->results = pointerSTasksData->messageImReceiving;
+	//pointerSTasksData->results += 10;
+	//printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
+	//pthread_exit(NULL);
 	
 }
 void* tPerformSlaveCalculatorTasksOver()
