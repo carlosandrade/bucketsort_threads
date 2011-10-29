@@ -10,6 +10,19 @@ Ideia principal desse codigo:
 3. Cada processo child devera ter 3 threads..
 
 Obs: Por enquanto vou considerar que existem no codigo apenas um processo master e um processo slave dotado de 3 threads.
+
+
+Notar que as mensagens trocadas entre mestre e escravo foram classificadas atraves de TAG e TAGFIM
+
+TAG sao usadas para as comunicacoes normais de passagem de funcao do mestre para os escravos
+TAGFIM e usado pelos escravos para que o mestre saiba quando cada uma delas terminou a thread de calculo, 
+uma vez que ela tenha terminado uma mensagem e enviada pelo mestre que identificara a TAGFIM e por sua vez
+enviara a mensagem FIM conforme a especificacao da atividade apenas TODOS os escravos tiverem terminado o calculo
+
+Por sua vez, um processo escravo so sai do metodo SlaveTasks apos receber essa mensagem por conta da mesma ser bloqueante
+
+Isso garante que o barrier do processo escravo so seja executado apos o recebimento da mensagem fim ao processo escravo retornar
+para main, o que tambem fica em conformidade com a especificacao
 **/
  
 
@@ -24,13 +37,14 @@ Obs: Por enquanto vou considerar que existem no codigo apenas um processo master
 //Constants
 #define ROOT_RANK 0   
 #define TAG 1 //Since its not important in this case the messageKey, let all of them be 1.
+#define TAGFIM 2 //Will be used for fin messages
 
 	//Will be used to identify the threads
 		#define REQUESTER 0
 		#define CALCULATOR 1
 		#define WRITER 2
 
-void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc);
+void performMasterTasks(int numberOfSlavesMasterShouldListen,int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
 
 //Metodo de threads
@@ -38,6 +52,8 @@ void performSlaveTasks(int myRank, int rc);
 void* tPerformSlaveWriterTasks(void* data);
 void* tPerformSlaveCalculatorTasks(void* data);
 void* tPerformSlaveRequesterTasks(void* data);
+void* tPerformSlaveCalculatorTasksOver();
+
 
 //Necessary information among the threads
 		 struct slaveTasksData{
@@ -54,6 +70,7 @@ int main(int argc, char *argv[]){
 	int myRank,numberOfMPIProcesses;   
 	int rc;
 	int numberOfSlavesMasterShouldListen;
+	int numberOfSlavesMasterShouldWaitForCalculation;
 
 	//Initialize the environment   
 	MPI_Init(&argc, &argv); 
@@ -61,13 +78,14 @@ int main(int argc, char *argv[]){
 	//How many processes are associated with my standard communicator MPI_COMM_WORLD?
 	MPI_Comm_size(MPI_COMM_WORLD,&numberOfMPIProcesses);   
 	numberOfSlavesMasterShouldListen = numberOfMPIProcesses - 1; //The master wont listen to himself.
+	numberOfSlavesMasterShouldWaitForCalculation = numberOfSlavesMasterShouldListen;
 	
 	//I need a rank for this communicator so this application can tell if I am the master or just some slave. Set my rank.
 	MPI_Comm_rank(MPI_COMM_WORLD,&myRank);   
   
 	//Am I the root process or just one of it's slave?
 	if(myRank==ROOT_RANK)
-		performMasterTasks(numberOfSlavesMasterShouldListen, myRank, rc);
+		performMasterTasks(numberOfSlavesMasterShouldListen,numberOfSlavesMasterShouldWaitForCalculation, myRank, rc);
 	else 
 		performSlaveTasks(myRank,rc);
 		
@@ -82,7 +100,7 @@ int main(int argc, char *argv[]){
 }
 
 
-void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc)
+void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc)
 {
 		//General message information
 		int 	numberOfMessageCopies	=	1;
@@ -98,6 +116,11 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc
 		//Content of the message sent
 		int 	messageImSending 		=	9;
 		int		destinationRank;
+		
+		//For sending FIM message
+		int slaveRank;
+		int numberOfSlaveProcess = numberOfSlavesMasterShouldListen;
+		
 
 
 		printf("I am the master process and my rank is %d!\n",myRank);
@@ -126,7 +149,26 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc
 			//One less slave to deal with.
 			numberOfSlavesMasterShouldListen--;
 		}
-
+		while(numberOfSlavesMasterShouldWaitForCalculation > 0)
+		{
+			//Since I'm the master, I should now wait for my slaves to tell me that they finished calculating the data 
+		  	rc = MPI_Recv(&messageImReceiving, 1, MPI_CHAR, MPI_ANY_SOURCE, TAGFIM, MPI_COMM_WORLD, &status);
+			numberOfSlavesMasterShouldWaitForCalculation--;
+			
+			printf("Number of calculation tasks from my slaves remaining: %d\n",numberOfSlavesMasterShouldWaitForCalculation);
+		}
+		//Only after all my slaves finished calculation I should tell them that it is over and that they must cast a barrier
+		printf("At this point, I, the master process know that all calculation is over by my slave tasks as they notified me\n");
+		messageImSending = 'f';
+		for(slaveRank= 1; slaveRank <= numberOfSlaveProcess ; slaveRank++)
+		{
+			printf("Issuing FIM message for slave process whose rank is: %d\n",slaveRank);
+			rc = MPI_Send(&messageImSending, numberOfMessageCopies, MPI_CHAR, slaveRank, TAGFIM, MPI_COMM_WORLD);
+		}
+			
+		printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
+		
+	  	
 }
 void performSlaveTasks(int myRank, int rc)
 {
@@ -153,9 +195,16 @@ void performSlaveTasks(int myRank, int rc)
 		//I must wait the calculator to calculate the data before I attempt to write the results to the file
 		pthread_join( thread_id[CALCULATOR], NULL);
 		
+		//I must tell my master that I finished the calculation so that he may issue me a FIM message
+		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveCalculatorTasksOver, NULL);	
+		
+		//If I reached this point, that means my slave comrades all finished calculating because master issued me a FIM msg
+		
 		//Since I have the results, I may write it to the file
 		pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, pointerSTasksData);	
 	
+		//Do note that I'll not exit until master tell me a FIM msg, so I'll never return to main and cast my slave barrier
+		//until that occurs according to the assignment specification
 	   	pthread_exit(NULL);
 	
 		
@@ -199,6 +248,30 @@ void* tPerformSlaveCalculatorTasks(void* data)
 	pointerSTasksData->results += 10;
 	printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
 	pthread_exit(NULL);
+	
+}
+void* tPerformSlaveCalculatorTasksOver()
+{
+		//General message information
+		int 	numberOfMessageCopies	=	1;
+		int		messageKind				=	MPI_CHAR;
+		int 	rc;
+		MPI_Status status; //This is a necessary parameter but won't be used here
+		
+		//Content of the message sent
+		char	messageImSending 		=	'd';
+		int		destinationRank			=	0;
+		
+		//Content of the message received
+		int		sourceRank				=	0;
+		char messageImReceiving;
+		
+		//I'll tell master the calculator was over with this TAGFIM message 
+		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAGFIM, MPI_COMM_WORLD);
+		
+		//Master must tell me the FIM message with TAGFIM so I may proceed and cast my barrier, until then I block.
+		rc = MPI_Recv(&messageImReceiving, numberOfMessageCopies, MPI_CHAR, sourceRank, TAGFIM, MPI_COMM_WORLD, &status);
+		
 	
 }
 void* tPerformSlaveWriterTasks(void* data)
