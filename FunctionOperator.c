@@ -66,6 +66,7 @@ void* tPerformSlaveCalculatorTasksOver();
 			int results;//Should be shared between the calculator and the writer
 			int myRank; //Just for identification inside the thread of the current MPI_Process
 			int sizeSlaveArray;
+			char array[150][80];
 		//	char **line;
 		}sTasksData;
 
@@ -248,14 +249,17 @@ void performSlaveTasks(int myRank, int rc)
 		struct slaveTasksData * pointerSTasksData = &sTasksData;
 		pointerSTasksData->myRank = myRank;
 		
+
+		
+		
 		
 		//Let 0 be the function requester, 1 the calculator and 2 the writer of the results, see macros above
 		pthread_t thread_id[3];
 		
 		//To get things going I should have 3 threads to help me out on this task..
 		
-		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveRequesterTasks, pointerSTasksData);	
-	
+		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveRequesterTasks, NULL);	
+		
 		//I must wait the requester to obtain the data before I move any further
 		pthread_join( thread_id[REQUESTER], NULL);
 		
@@ -284,6 +288,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 //	struct slaveTasksData* slaveTasksData;
 	
 	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+		//char ** array = (char**)data;
 		
 		//General message information
 		int 	numberOfMessageCopies	=	1;
@@ -298,8 +303,14 @@ void* tPerformSlaveRequesterTasks(void* data)
 		//Content of the message received
 		int		sourceRank				=	0;
 			
-		
-		
+	
+	
+	
+		int a,b;
+	
+
+	
+		/*
 		char subarray [150][80];
 		int a,b;
 		for(a=0;a<150;a++)
@@ -309,7 +320,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 				subarray[a][b] = '9';
 			}
 		}
-		
+		*/
 		/*
 		//Initialize the sub-part of the original array so that I , the slave, may work on my share of work
 		sTasksData.messageImReceiving = calloc(151, sizeof(char*));
@@ -328,7 +339,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 //				printf("%d\n",bla[i][k]);
 //		}
 		
-		
+	printf("foi ate aqui \n");
 		//Since I'm a slave, I should request my master for some data to work on.
 		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAG, MPI_COMM_WORLD);
 		
@@ -337,13 +348,15 @@ void* tPerformSlaveRequesterTasks(void* data)
 	
 //		//I shall slack until master send what I requested. I'm blocked until I receive the data.
 
-		rc = MPI_Recv(&subarray, 2000, MPI_CHAR, sourceRank, TAG, MPI_COMM_WORLD, &status);
+		rc = MPI_Recv(&sTasksData.array, 2000, MPI_CHAR, sourceRank, TAG, MPI_COMM_WORLD, &status);
 		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
+		
+		
 		for(a=0;a<2;a++)
 		{ 
 			for(b=0;b<5;b++)
-			{
-				printf("%c",subarray[a][b]);
+			{ 
+				printf("%c",sTasksData.array[a][b]);
 			}
 			printf("\n");
 		}						
