@@ -30,6 +30,11 @@ Obs: Por enquanto vou considerar que existem no codigo apenas um processo master
 
 void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
+
+//Metodo de threads
+
+void* tPerformSlaveWriterTasks(void* data);
+void* tPerformSlaveCalculatorTasks(void* data);
 void* tPerformSlaveRequesterTasks(void* data);
 
 //Necessary information among the threads
@@ -138,21 +143,21 @@ void performSlaveTasks(int myRank, int rc)
 		pthread_join( thread_id[REQUESTER], NULL);
 		
 		//Since I have the data, I may calculate it
-	//	pthread_create( &thread_id[CALCULATOR], NULL, tPerformSlaveCalculatorTasks, &slaveTasksData);	
+		pthread_create( &thread_id[CALCULATOR], NULL, tPerformSlaveCalculatorTasks, pointerSTasksData);	
 		
 		//I must wait the calculator to calculate the data before I attempt to write the results to the file
-	//	pthread_join( thread_id[CALCULATOR], NULL);
+		pthread_join( thread_id[CALCULATOR], NULL);
 		
 		//Since I have the results, I may write it to the file
-	//	pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, &slaveTasksData);	
+		pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, pointerSTasksData);	
 	
-	   pthread_exit(NULL);
+	   	pthread_exit(NULL);
 	
 		
 }
 void* tPerformSlaveRequesterTasks(void* data)
 {
-	struct slaveTasksData* slaveTasksData;
+//	struct slaveTasksData* slaveTasksData;
 	
 	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
 		
@@ -168,7 +173,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 		
 		//Content of the message received
 		int		sourceRank				=	0;
-		
+			
 		
 		//Since I'm a slave, I should request my master for some data to work on.
 		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAG, MPI_COMM_WORLD);
@@ -182,11 +187,19 @@ void* tPerformSlaveRequesterTasks(void* data)
 		pthread_exit(NULL);
 	   
 }
-void* tPerformSlaveCalculatorTasks()
+void* tPerformSlaveCalculatorTasks(void* data)
 {
+	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+	pointerSTasksData->results = pointerSTasksData->messageImReceiving;
+	pointerSTasksData->results += 10;
+	printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
+	pthread_exit(NULL);
 	
 }
-void* tPerformSlaveWriterTasks()
+void* tPerformSlaveWriterTasks(void* data)
 {
+	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
+	
+	pthread_exit(NULL);
 	
 }
