@@ -21,6 +21,10 @@ Obs: Por enquanto vou considerar que existem no codigo apenas um processo master
 #define ROOT_RANK 0   
 #define TAG 1 //Since its not important in this case the messageKey, let all of them be 1.
 
+void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc);
+void performSlaveTasks(int myRank, int rc);
+
+
 //Main code
 int main(int argc, char *argv[]){   
 	
@@ -41,37 +45,50 @@ int main(int argc, char *argv[]){
   
 	//Am I the root process or just one of it's slave?
 	if(myRank==ROOT_RANK)
-	{
+		performMasterTasks(numberOfSlavesMasterShouldListen, myRank, rc);
+	else 
+		performSlaveTasks(myRank,rc);
+	  	
+	//End the parallel section of the code based on MPI. 
+	MPI_Finalize();	
+	
+	//End execution.
+	return (0);
+}
+
+
+void performMasterTasks(int numberOfSlavesMasterShouldListen, int myRank, int rc)
+{
 		//General message information
 		int 	numberOfMessageCopies	=	1;
 		int		messageKind				=	MPI_CHAR;
 		MPI_Status status; //Necessary so the master know to which slave the requested data should be sent
 		int slaveRankWhoSentTheRequest;
 		int receivedAmountOfDataFromSlave;
-		
+
 		//Content of the message received
 		char 	messageImReceiving;
 		int		sourceRank				=	0;
-		
+
 		//Content of the message sent
 		int 	messageImSending 		=	9;
 		int		destinationRank;
-		
-		
+
+
 		printf("I am the master process and my rank is %d!\n",myRank);
-		
+
 		//I shall be listening all my slave requests until they're all satisfied. One slave communicate with me exacly ONCE.
 		while(numberOfSlavesMasterShouldListen > 0)
 			{	printf("NumberOfRemainingSlaves: %d\n",numberOfSlavesMasterShouldListen);
-		
+
 			//Since I'm the master, I should send my slaves data to work on ONLY WHEN they request it.
 		  	rc = MPI_Recv(&messageImReceiving, 1, MPI_CHAR, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, &status);
-		
+
 			//Which of those slaves sent me the request?
 			rc = MPI_Get_count(&status, MPI_FLOAT, &receivedAmountOfDataFromSlave);
 			slaveRankWhoSentTheRequest = status.MPI_SOURCE;
 			printf("The slave rank who sent the request was: %d\n",slaveRankWhoSentTheRequest);
-			
+
 			//I should answer him properly..
 			destinationRank = slaveRankWhoSentTheRequest;
 
@@ -80,13 +97,14 @@ int main(int argc, char *argv[]){
 
 			//Send data to the slave process that requested it
 		  	rc = MPI_Send(&messageImSending, numberOfMessageCopies, MPI_INT, destinationRank, TAG, MPI_COMM_WORLD);
-		
+
 			//One less slave to deal with.
 			numberOfSlavesMasterShouldListen--;
 		}
-	}
-	else 
-	{
+
+}
+void performSlaveTasks(int myRank, int rc)
+{
 		//General message information
 		int 	numberOfMessageCopies	=	1;
 		int		messageKind				=	MPI_CHAR;
@@ -111,10 +129,4 @@ int main(int argc, char *argv[]){
 		
 		//I should be a slave task and I should have received my data properly. 
 		printf("I'm the slave task %d. The data I received is %d\n",myRank,messageImReceiving);
-	  	
-	}
-	//End the parallel section of the code based on MPI. 
-	MPI_Finalize();	
-	//End execution.
-	return (0);
-  }
+}
