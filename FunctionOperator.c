@@ -1,6 +1,8 @@
 /**
 Ideia principal desse codigo:
 
+<Isso ja foi modificado consideravelmente, preciso reescrever>
+
 1. A estrutura principal de armazenamento é um vetor fixo cujo tamanho e o mesmo que o numero de funcoes.
 	1.1 Cada posicao do vetor deve conter um ponteiro para char cujo tamanho sera alocado dinamicamente.
 		1.1.1 O vetor char nada mais e que uma String que contem exclusivamente uma funcao de uma linha do arquivo
@@ -68,6 +70,9 @@ int main(int argc, char *argv[]){
 		performMasterTasks(numberOfSlavesMasterShouldListen, myRank, rc);
 	else 
 		performSlaveTasks(myRank,rc);
+		
+	//On this point, I, as a process (master or slave) must wait my comrades to reach this point
+	MPI_Barrier(MPI_COMM_WORLD);
 	  	
 	//End the parallel section of the code based on MPI. 
 	MPI_Finalize();	
@@ -164,7 +169,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 		//General message information
 		int 	numberOfMessageCopies	=	1;
 		int		messageKind				=	MPI_CHAR;
-		int rc;
+		int 	rc;
 		MPI_Status status; //This is a necessary parameter but won't be used here
 		
 		//Content of the message sent
