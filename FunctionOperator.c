@@ -128,11 +128,6 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		
 		//For file management
 		FILE *fr;            /* declare the file pointer */
-		long elapsed_seconds;
-	   
-		
-		
-
 
 		printf("I am the master process and my rank is %d!\n",myRank);
 		
@@ -144,16 +139,9 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 	   	char numElemen[100];
 	   
 
-//		MPI_Finalize();	
-//		fclose(fr);  /* close the file prior to exiting the routine */
 		fgets(numElemen, sizeof(numElemen), fr);
 		numFuncoes = atoi(numElemen);
 		char line[numFuncoes][80];
-//		printf("valor do atoi: %d\n",n);
-//		exit(1);
-
-		//fgets(numElemen, sizeof(numElemen), fr);
-		
 		
 		int j=0;
 	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) 
@@ -161,10 +149,25 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 	
 		fclose(fr);  /* close the file prior to exiting the routine */
 	   
-		for(j=0;j<numFuncoes;j++)
-			puts(line[j]);
+		//Alright, I, the master, am done loading all the text file. Now I need to separate the original data to my slaves.
+		
+		//Well, I must give each slave process the same or almost the same quantity to work on so:
 		
 		
+		//guardando em n_p o tamanho dos subvetores   
+		int sizeSlaveArray;
+		
+		if(numberOfSlaveProcess!=0)
+			numFuncoes/numberOfSlaveProcess;   
+
+		//corrigindo caso tenha sido arredondado para baixo   
+		if(sizeSlaveArray*numberOfSlaveProcess < numFuncoes) sizeSlaveArray++;   
+
+		//alocando o vetor de resultado (contera as posicoes onde se encontra X)  int res[n]
+		//res = (int *) calloc(n,sizeof(int));  
+		
+		if(numberOfSlaveProcess!=0)
+			printf("Sub-vector sizes: %d\n",sizeSlaveArray);
 		
 		
 
