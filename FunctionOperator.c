@@ -23,6 +23,10 @@ Por sua vez, um processo escravo so sai do metodo SlaveTasks apos receber essa m
 
 Isso garante que o barrier do processo escravo so seja executado apos o recebimento da mensagem fim ao processo escravo retornar
 para main, o que tambem fica em conformidade com a especificacao
+
+Na verdade, os tasks receivers nao se importam muito com o conteudo da mensagem FIM apesar dessa verificacao ser facil,
+o que esta importando e o uso da TAGFIM. Ela tambem e necessaria para que o processo mestre ao receber os pedidos de dados
+nao confunda a sinalizacao de um processo ao acabar o calculo e acabe lhe mandando outra mensagem. 
 **/
  
 
@@ -32,6 +36,7 @@ para main, o que tambem fica em conformidade com a especificacao
 	#include <stdlib.h>
 	#include <string.h>   
 	#include <pthread.h>
+//	#include <dos.h>  /* for delay */
 
 
 //Constants
@@ -121,9 +126,47 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		int slaveRank;
 		int numberOfSlaveProcess = numberOfSlavesMasterShouldListen;
 		
+		//For file management
+		FILE *fr;            /* declare the file pointer */
+		long elapsed_seconds;
+	   
+		
+		
 
 
 		printf("I am the master process and my rank is %d!\n",myRank);
+		
+		//I need to start reading the functions from file, here I go..!
+		fr = fopen ("RandomOperatorInput.txt", "rt");  /* open the file for reading */
+		
+	   	int numFuncoes;
+	   	
+	   	char numElemen[100];
+	   
+
+//		MPI_Finalize();	
+//		fclose(fr);  /* close the file prior to exiting the routine */
+		fgets(numElemen, sizeof(numElemen), fr);
+		numFuncoes = atoi(numElemen);
+		char line[numFuncoes][80];
+//		printf("valor do atoi: %d\n",n);
+//		exit(1);
+
+		//fgets(numElemen, sizeof(numElemen), fr);
+		
+		
+		int j=0;
+	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) 
+			j++;
+	
+		fclose(fr);  /* close the file prior to exiting the routine */
+	   
+		for(j=0;j<numFuncoes;j++)
+			puts(line[j]);
+		
+		
+		
+		
 
 		//I shall be listening all my slave requests until they're all satisfied. One slave communicate with me exacly ONCE.
 		while(numberOfSlavesMasterShouldListen > 0)
