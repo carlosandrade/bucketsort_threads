@@ -463,10 +463,12 @@ void* tPerformSlaveCalculatorTasks(void* data)
 		}
 		sTasksData.result[a][j] = ' ';
 		j++;
-		for(k=0;(k<17) && (j<80) && cRes[k]!= ' ';k++,j++)
+		for(k=0;(k<17) && (j<80) && (cRes[k]!= ' ' || EOF);k++,j++)
 		{
+					printf("value = %s, j= %d\n",sTasksData.result[a],j);
 			sTasksData.result[a][j] = cRes[k];	
 		}
+		puts(sTasksData.result[a]);
 		sTasksData.result[a][j] = '\n';
 		
 		//	b=0;i=0;
