@@ -137,6 +137,10 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		int slaveRank;
 		int numberOfSlaveProcess = numberOfSlavesMasterShouldListen;
 		
+		//For knowing which slave process need more functions than others if numFuncoes % numberOfSlaveProcess != 0
+		int slaveNeedExtraTask = 0;
+		
+		
 		//For file management
 		FILE *fr;            /* declare the file pointer */
 
@@ -170,8 +174,28 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			
 		printf("Aqui size salve array e: %d\n",sTasksData.sizeSlaveArray);
 
-		//corrigindo caso tenha sido arredondado para baixo   
-		if(sTasksData.sizeSlaveArray*numberOfSlaveProcess < numFuncoes) sTasksData.sizeSlaveArray++;   
+		//Given that the amount of functions in this assignment is always more than the number of tasks..
+		if(sTasksData.sizeSlaveArray*numberOfSlaveProcess < numFuncoes)
+		{ 	
+			//Every task should at least have numFuncoes/numberOfSlaveProcess functions to deal with
+			//If I got inside this condition that means there are still functions that are not allocated
+			//to any slave process, but this amount of functions is less than the amount of tasks
+			//otherwise  either numFuncoes/numberOfSlaveProcess would be higher or a perfect division! 
+			
+			//That being said, mathematically on the worst situation numberOfSlaves - 1 would have one extra task
+			//and that would be enough so all functions are allocated
+			
+			//This way we guarantee that all tasks have the same amount of functions to deal with aside from the difference
+			//of one
+			
+			//Now when I, the master, send messages, I must tell the send process to send one more function 
+			//to few slave process
+			
+			//Now, since each slave only requests a task ONCE, a counter of amount of slaves that need extra task suffices
+				slaveNeedExtraTask = numFuncoes % numberOfSlaveProcess;
+				
+			
+		}
 
 		//alocando o vetor de resultado (contera as posicoes onde se encontra X)  int res[n]
 		//res = (int *) calloc(n,sizeof(int));  
@@ -197,15 +221,28 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			destinationRank = slaveRankWhoSentTheRequest;
 
 			//Send data to the slave process that requested it
+			if(slaveNeedExtraTask > 0)
+			{
+				rc = MPI_Send(&line[currentDataPosition], (sTasksData.sizeSlaveArray+1)*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);
+				slaveNeedExtraTask--;
+				
+				//I should also be careful not to send the same part of the data to different slave processes so..
+				printf("Valor de currentDataPosition: %d\n",currentDataPosition);
+				currentDataPosition += sTasksData.sizeSlaveArray+1;
+			}
+			else
+			{
+		  		rc = MPI_Send(&line[currentDataPosition], sTasksData.sizeSlaveArray*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);				
+				//I should also be careful not to send the same part of the data to different slave processes so..
+				printf("Valor de currentDataPosition: %d\n",currentDataPosition);
+				currentDataPosition += sTasksData.sizeSlaveArray;
+			}
 
-		  	rc = MPI_Send(&line[currentDataPosition], sTasksData.sizeSlaveArray*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);
 
 
-			//I should also be careful not to send the same part of the data to different slave processes so..
-			printf("Valor de currentDataPosition: %d\n",currentDataPosition);
-			currentDataPosition += sTasksData.sizeSlaveArray;
-			if(currentDataPosition > numFuncoes)
-				currentDataPosition = numFuncoes; //Not quite sure if this occurs, but just in case..; //Gets the next portion of the data
+
+			//if(currentDataPosition > numFuncoes)
+			//	currentDataPosition = numFuncoes; //Not quite sure if this occurs, but just in case..; //Gets the next portion of the data
 
 			//One less slave to deal with.
 			numberOfSlavesMasterShouldListen--;
@@ -312,7 +349,8 @@ void* tPerformSlaveRequesterTasks(void* data)
 		rc = MPI_Get_count(&status, MPI_CHAR, &count);
 		
 		//With this, all the threads of this proces 
-		sTasksData.sizeSlaveArray = count/80; 
+		sTasksData.sizeSlaveArray = count/80;  //Because I know the sender always does count = 80 * something this is okay
+		printf("I am the task %d, and the amount of functions I need to deal with are: %d\n",sTasksData.myRank,sTasksData.sizeSlaveArray);
 //		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
 		
 /*
