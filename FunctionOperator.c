@@ -440,7 +440,7 @@ void* tPerformSlaveCalculatorTasks(void* data)
 		//printf("op1: %s\n",operand1);
 	
 		//Just to see if all went ok
-		printf("Linha de resultado: %s\n",sTasksData.result[a]);
+//		printf("Linha de resultado: %s\n",sTasksData.result[a]);
 		/*
 		printf("Valor da linha %d do arquivo resposta: ",a);
 		for(k=0;k<80;k++)	
@@ -521,10 +521,14 @@ void* tPerformSlaveCalculatorTasksOver()
 }
 void* tPerformSlaveWriterTasks(void* data)
 {
-	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
-	int resultado = pointerSTasksData->results;
-	
+	int i=0;
+
+	for(i=0;i<sTasksData.sizeSlaveArray;i++)
+		printf("Linha de resultado no writer: %s\n",sTasksData.result[i]);	
+		
+		
 	//Operacoes para salvar resultado em arquivo
+	
 	
 	pthread_exit(NULL);
 	
