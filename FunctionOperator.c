@@ -51,6 +51,8 @@ nao confunda a sinalizacao de um processo ao acabar o calculo e acabe lhe mandan
 
 void performMasterTasks(int numberOfSlavesMasterShouldListen,int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
+int calculateFunction(char operador, char operando1, char operando2);
+
 
 //Metodo de threads
 
@@ -145,14 +147,6 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		fgets(numElemen, sizeof(numElemen), fr);
 		numFuncoes = atoi(numElemen);
 		char line[numFuncoes][80];
-		/*
-		sTasksData.line = calloc(numFuncoes, sizeof(char*));
-		int i;
-		for(i=0; i<numFuncoes; i++)
-		  sTasksData.line[i] = calloc(80, sizeof(char));
-		*/
-		//printf("line2: %d, e line: %d\n",sizeof(line2),sizeof(sTasksData.line));
-	//		exit(0);
 		
 		int j=0;
 	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) 
@@ -165,11 +159,6 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//Well, I must give each slave process the same or almost the same quantity to work on so:
 		for(j=0;j<numFuncoes;j++)
 			puts(line[j]);
-			
-//		exit(0);
-		
-		//guardando em n_p o tamanho dos subvetores   
-		//int sizeSlaveArray;
 		
 		if(numberOfSlaveProcess!=0)
 			sTasksData.sizeSlaveArray = numFuncoes/numberOfSlaveProcess;   
@@ -203,10 +192,6 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			destinationRank = slaveRankWhoSentTheRequest;
 
 			//Send data to the slave process that requested it
-			//printf("Testando algo aqui 676: %s\n",sTasksData.line[0]);
-			
-//			printf("sizeslavearray? %d\n",sTasksData.sizeSlaveArray);
-//			printf("count vai ficar? %d\n",sTasksData.sizeSlaveArray*80);
 
 		  	rc = MPI_Send(&line[currentDataPosition], sTasksData.sizeSlaveArray*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);
 
@@ -245,13 +230,8 @@ void performSlaveTasks(int myRank, int rc)
 {
 		printf("I am a slave and my rank is %d!\n",myRank);
 		
-
 		struct slaveTasksData * pointerSTasksData = &sTasksData;
 		pointerSTasksData->myRank = myRank;
-		
-
-		
-		
 		
 		//Let 0 be the function requester, 1 the calculator and 2 the writer of the results, see macros above
 		pthread_t thread_id[3];
@@ -288,7 +268,6 @@ void* tPerformSlaveRequesterTasks(void* data)
 //	struct slaveTasksData* slaveTasksData;
 	
 	struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
-		//char ** array = (char**)data;
 		
 		//General message information
 		int 	numberOfMessageCopies	=	1;
@@ -302,65 +281,46 @@ void* tPerformSlaveRequesterTasks(void* data)
 		
 		//Content of the message received
 		int		sourceRank				=	0;
-			
 	
+	int a=0,b=0;
 	
-	
-		int a,b;
-	
-
-	
-		/*
-		char subarray [150][80];
-		int a,b;
-		for(a=0;a<150;a++)
-		{
-			for(b=0;b<80;b++)
-			{
-				subarray[a][b] = '9';
-			}
-		}
-		*/
-		/*
-		//Initialize the sub-part of the original array so that I , the slave, may work on my share of work
-		sTasksData.messageImReceiving = calloc(151, sizeof(char*));
-		int i;
-		for(i=0; i<151; i++)
-		  sTasksData.messageImReceiving[i] = calloc(80, sizeof(char));
-		*/
-//	int bla[2][80] = {0};
-
-//	int k;
-	//printf("bla %d\n",sizeof(sTasksData.messageImReceiving));
-//	for(i=0;i<2;i++)
-//		{	printf("entrou no for \n");
-//			
-//			for(k=0;k<80;k++)
-//				printf("%d\n",bla[i][k]);
-//		}
-		
-	printf("foi ate aqui \n");
 		//Since I'm a slave, I should request my master for some data to work on.
 		rc = MPI_Send(&messageImSending, numberOfMessageCopies, messageKind, destinationRank, TAG, MPI_COMM_WORLD);
 		
+		//Let me initialize the bidimensional array so that it will be easier to find where are the elements I want
+		int i,j;
+		for(i=0; i < 150 ; i++)
+		{
+			for(j=0;j<80;j++)
+			{
+				sTasksData.array[i][j] = '\n';
+			}
+		}
 		
-//		printf("outro teste: %d\n",80);
-	
-//		//I shall slack until master send what I requested. I'm blocked until I receive the data.
-
+		//I shall slack until master send what I requested. I'm blocked until I receive the data.
 		rc = MPI_Recv(&sTasksData.array, 2000, MPI_CHAR, sourceRank, TAG, MPI_COMM_WORLD, &status);
-		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
 		
 		
-		for(a=0;a<2;a++)
+		//It is of interest to me, slave, to know how many funcions master gave me. Let me use his package count to figure it out.
+		MPI_Status Stat;
+		int count;
+		rc = MPI_Get_count(&status, MPI_CHAR, &count);
+		
+		//With this, all the threads of this proces 
+		sTasksData.sizeSlaveArray = count/80; 
+//		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
+		
+
+		//Just a print to see whats going on
+		for(a=0;a < sTasksData.sizeSlaveArray ;a++)
 		{ 
-			for(b=0;b<5;b++)
-			{ 
+			for(b=0;(b<5) && (sTasksData.array[a][b] != '\n') ;b++)
+			{ 	
 				printf("%c",sTasksData.array[a][b]);
 			}
 			printf("\n");
 		}						
-						
+
 													
 		
 		//printf("Testando algo aqui2: %s\n",subarray[6]);													
@@ -376,13 +336,57 @@ void* tPerformSlaveRequesterTasks(void* data)
 	   
 }
 void* tPerformSlaveCalculatorTasks(void* data)
-{
+{	
+	int a,b;
+	for(a=0;a < sTasksData.sizeSlaveArray ;a++)
+	{ 
+		//printf("Sejam dados: %c %c %c.\n",sTasksData.array[a][0],sTasksData.array[a][2],sTasksData.array[a][4]);
+		calculateFunction(sTasksData.array[a][0],sTasksData.array[a][2],sTasksData.array[a][4]);
+	}	
+//	int i=0,j=0;
+//	for(i=0;i<)
+//	while(sTasksData.array[i][j])
+//	sTasksData.array
 	//struct slaveTasksData * pointerSTasksData = (struct slaveTasksData *)data;
 	//pointerSTasksData->results = pointerSTasksData->messageImReceiving;
 	//pointerSTasksData->results += 10;
 	//printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
 	//pthread_exit(NULL);
 	
+}
+int calculateFunction(char operador, char operando1, char operando2)
+{ int op1,op2,res;
+	char oper1[1], oper2[1];
+	oper1[0] = operando1;
+	oper2[0] = operando2;
+ 	op1 = atoi(oper1);
+ 	op2 = atoi(oper2);
+
+	switch(operador)
+	{
+		case '+':
+			res = op1 + op2;
+		break;
+		case '-':
+			res = op1 - op2;
+		break;
+		case '*':
+			res = op1 * op2;
+		break;
+		case '/':
+			if(op2!=0)
+				res = op1 / op2;
+			else
+				res = 0;
+		break;
+		case '%':
+			res = op1 % op2;
+		break;
+			default:
+			printf("Operador nao suportado, erro na funcao especificacada \n");
+			exit(0);
+	}
+	return ;
 }
 void* tPerformSlaveCalculatorTasksOver()
 {
