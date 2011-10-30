@@ -52,7 +52,7 @@ nao confunda a sinalizacao de um processo ao acabar o calculo e acabe lhe mandan
 void performMasterTasks(int numberOfSlavesMasterShouldListen,int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
 int calculateFunction(char operador, char operando1[], char operando2[]);
-void mergeSlaveFiles(int numberOfSlaveProcess);
+void mergeSlaveFiles(int numberOfSlaveProcess, int numFuncoesTot);
 
 
 
@@ -76,6 +76,8 @@ void itoa(int value, char* str, int base);
 			int myRank; //Just for identification inside the thread of the current MPI_Process
 			int sizeSlaveArray;
 			char array[150][80];
+			int numberOfSlaveProcess;
+			int numFuncoesTot;
 		//	char **line;
 		}sTasksData;
 
@@ -106,12 +108,21 @@ int main(int argc, char *argv[]){
 	else 
 		performSlaveTasks(myRank,rc);
 		
-	//On this point, I, as a process (master or slave) must wait my comrades to reach this point
+	//On this point, I, as a process (master or slave) must wait my comrades to reach this point so I know all tmp files have
+	//been written
 	MPI_Barrier(MPI_COMM_WORLD);
+	//printf("PROCESSO %d PASSOU DO BARRIER\n",sTasksData.myRank);
+	if(myRank==ROOT_RANK)
+	{
+		mergeSlaveFiles(sTasksData.numberOfSlaveProcess,sTasksData.numFuncoesTot);
+	}
+		
+		
 	  	
 	//End the parallel section of the code based on MPI. 
+//	pthread_exit(NULL);
 	MPI_Finalize();	
-	
+
 	//End execution.
 	return (0);
 }
@@ -160,8 +171,7 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		char line[numFuncoes][80];
 		
 		int j=0;
-	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) 
-			j++;
+	 	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) j++;
 	
 		fclose(fr);  /* close the file prior to exiting the routine */
 	   
@@ -265,14 +275,16 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			printf("Issuing FIM message for slave process whose rank is: %d\n",slaveRank);
 			rc = MPI_Send(&messageImSending, numberOfMessageCopies, MPI_CHAR, slaveRank, TAGFIM, MPI_COMM_WORLD);
 		}
+		
+		sTasksData.numberOfSlaveProcess = numberOfSlaveProcess;
+		sTasksData.numFuncoesTot = numFuncoes;
+		
 			
 		printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
 		
-		//Now, as a master I'll merge all the functions file into a single one and remove the temporary files created
-		mergeSlaveFiles(numberOfSlaveProcess);
 
 }
-void mergeSlaveFiles(int numberOfSlaveProcess)
+void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 {
 	int i;
 	char slave[9] = "tmpslave\0";
@@ -281,37 +293,58 @@ void mergeSlaveFiles(int numberOfSlaveProcess)
 	//Define file name as slave<slaveRank>.txt
 	for(i=0;i<numberOfSlaveProcess;i++)
 		sprintf(nomeArq[i],"%s%d.txt",slave,i+1);
+		
+	for(i=0;i<numberOfSlaveProcess;i++)
+		printf("%s\n",nomeArq[i]);
 	
 //	printf("qtd slave process %d\n",numberOfSlaveProcess);
-	/*
+	
 	//Collect results from slave files
 	FILE *fr;         
+	int numFuncoes;
+	char numElemen[100];
+	char line[numFuncoesTot][80];
+	int j=0,contFuncoesPorArq=0;
+
+
+	//I need to start reading the functions from my slave tmpfiles, here I go..!	
+	printf("number of slaves process: %d\n",numberOfSlaveProcess);
+	for(i=0;i<numberOfSlaveProcess;i++)
+	{	
+		contFuncoesPorArq=0;
+		printf("valor de i: %d, e nome do arquivo: %s\n",i,nomeArq[i]);
+		fr = fopen (nomeArq[i], "rt");
+		if(fr!=NULL)
+			printf("fr e diferente de null!\n");  
+		fgets(numElemen, sizeof(numElemen), fr);
+		numFuncoes = atoi(numElemen);
+		printf("numFuncos para i %d, sera %d\n",i,numFuncoes);
+//		fgets(line[j], sizeof(numElemen), fr);
+//		printf("Segundo fgets botou em linej: %s\n",line[j]);
+		while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && contFuncoesPorArq < numFuncoes )
+		{
+			printf("o que esta sendo gravado em linej: %s\n",line[j]);
+			j++;
+			contFuncoesPorArq++;
+		}
+		fclose(fr);
+	}
+	for(i=0;i<numFuncoesTot;i++)
+		printf("Funcoes do merge: %s\n",line[i]);
 
 		
-	//I need to start reading the functions from file, here I go..!
-	fr = fopen ("RandomOperatorInput.txt", "rt");  
-		
-	int numFuncoes;
-	   	
-	char numElemen[100];
-	   
-	fgets(numElemen, sizeof(numElemen), fr);
-	numFuncoes = atoi(numElemen);
-	char line[numFuncoes][80];
-		
-	int j=0;
-	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) j++;
-	
-	fclose(fr);  
+
 	
 	//Remove the tmp files created by my slaves
+	
+	
 	for(i=0;i<numberOfSlaveProcess;i++)
 	{
 //		printf("nome do arquivo %s\n",nomeArq[i]);
 		if (remove(nomeArq[i]) == -1)
 		 	perror("Error in deleting one of the tmp files");	
 	}
-*/
+
 }
 void performSlaveTasks(int myRank, int rc)
 {
@@ -340,14 +373,15 @@ void performSlaveTasks(int myRank, int rc)
 		pthread_create( &thread_id[REQUESTER], NULL, tPerformSlaveCalculatorTasksOver, NULL);	
 		
 		//If I reached this point, that means my slave comrades all finished calculating because master issued me a FIM msg
-		
+
+		pthread_join( thread_id[REQUESTER], NULL);		
 		//Since I have the results, I may write it to the file
 		pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, pointerSTasksData);	
 
 		//Do note that I'll not exit until master tell me a FIM msg, so I'll never return to main and cast my slave barrier
 		//until that occurs according to the assignment specification
-	   	pthread_exit(NULL);
-	
+	   //	pthread_exit(NULL);
+		printf("I SAW THE END OF IT, says slave whose rank is %d !\n",sTasksData.myRank);
 		
 }
 void* tPerformSlaveRequesterTasks(void* data)
@@ -510,7 +544,7 @@ void* tPerformSlaveCalculatorTasks(void* data)
 		j++;
 		for(k=0;(k<17) && (j<80) && (cRes[k]!= ' ' || EOF);k++,j++)
 		{
-					printf("value = %s, j= %d\n",sTasksData.result[a],j);
+					//printf("value = %s, j= %d\n",sTasksData.result[a],j);
 			sTasksData.result[a][j] = cRes[k];	
 		}
 		puts(sTasksData.result[a]);
@@ -546,7 +580,7 @@ void* tPerformSlaveCalculatorTasks(void* data)
 	//pointerSTasksData->results = pointerSTasksData->messageImReceiving;
 	//pointerSTasksData->results += 10;
 	//printf("Resultado obtido pelo processo de rank %d e: %d\n",pointerSTasksData->myRank,pointerSTasksData->results);
-	//pthread_exit(NULL);
+	pthread_exit(NULL);
 	
 }
 int calculateFunction(char operador, char operando1[], char operando2[])
@@ -602,6 +636,7 @@ void* tPerformSlaveCalculatorTasksOver()
 		//Master must tell me the FIM message with TAGFIM so I may proceed and cast my barrier, until then I block.
 		rc = MPI_Recv(&messageImReceiving, numberOfMessageCopies, MPI_CHAR, sourceRank, TAGFIM, MPI_COMM_WORLD, &status);
 		
+		pthread_exit(NULL);
 	
 }
 void* tPerformSlaveWriterTasks(void* data)
