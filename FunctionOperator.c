@@ -564,12 +564,38 @@ void* tPerformSlaveWriterTasks(void* data)
 	int i=0;
 
 	for(i=0;i<sTasksData.sizeSlaveArray;i++)
-		printf("Linha de resultado no writer: %s\n",sTasksData.result[i]);	
-		
+		printf("Linha de resultado no writer: %s\n",sTasksData.result[i]);			
 		
 	//Operacoes para salvar resultado em arquivo
 	
+	FILE *p;
 	
+	char slave[6] = "slave\0";
+	char nomeArq[80];
+
+	//Define file name as slave<slaveRank>.txt
+	sprintf(nomeArq,"%s%d.txt",slave,sTasksData.myRank);
+
+	if (!(p = fopen(nomeArq,"w")))  /* Caso ocorra algum erro na abertura do arquivo..*/ 
+  	{                           /* o programa aborta automaticamente */
+  		printf("Erro! Impossivel abrir o arquivo!\n");
+  		exit(1);
+  	}
+	/* Se nao houve erro, imprime no arquivo, fecha ...*/
+	for(i=0;i<sTasksData.sizeSlaveArray;i++)
+		fprintf(p,"%s\n",sTasksData.result[i]);
+	fclose(p);
+/*
+	// abre novamente para a leitura 
+	p = fopen(str,"r");
+	while (!feof(p))
+ 	{
+  		fscanf(p,"%c",&c);
+  		printf("%c",c);
+  	} 
+	fclose(p);
+	
+*/	
 	pthread_exit(NULL);
 	
 }
