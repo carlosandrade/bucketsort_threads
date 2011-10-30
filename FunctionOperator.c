@@ -1,6 +1,6 @@
 /**
 Ideia principal desse codigo:
-
+Author: Carlos Andrade
 <Isso ja foi modificado consideravelmente, preciso reescrever>
 
 1. A estrutura principal de armazenamento é um vetor fixo cujo tamanho e o mesmo que o numero de funcoes.
@@ -52,6 +52,8 @@ nao confunda a sinalizacao de um processo ao acabar o calculo e acabe lhe mandan
 void performMasterTasks(int numberOfSlavesMasterShouldListen,int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
 int calculateFunction(char operador, char operando1[], char operando2[]);
+void mergeSlaveFiles(int numberOfSlaveProcess);
+
 
 
 //Metodo de threads
@@ -266,7 +268,27 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			
 		printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
 		
-	  	
+		//Now, as a master I'll merge all the functions file into a single one and remove the temporary files created
+		mergeSlaveFiles(numberOfSlaveProcess);
+
+}
+void mergeSlaveFiles(int numberOfSlaveProcess)
+{
+	int i;
+	char slave[9] = "tmpslave\0";
+	char nomeArq[numberOfSlaveProcess][80];
+
+	//Define file name as slave<slaveRank>.txt
+	for(i=0;i<numberOfSlaveProcess;i++)
+		sprintf(nomeArq[i],"%s%d.txt",slave,i+1);
+	
+//	printf("qtd slave process %d\n",numberOfSlaveProcess);
+	for(i=0;i<numberOfSlaveProcess;i++)
+	{
+//		printf("nome do arquivo %s\n",nomeArq[i]);
+		if (remove(nomeArq[i]) == -1)
+		 	perror("Error in deleting one of the tmp files");	
+	}
 }
 void performSlaveTasks(int myRank, int rc)
 {
@@ -570,7 +592,7 @@ void* tPerformSlaveWriterTasks(void* data)
 	
 	FILE *p;
 	
-	char slave[6] = "slave\0";
+	char slave[9] = "tmpslave\0";
 	char nomeArq[80];
 
 	//Define file name as slave<slaveRank>.txt
