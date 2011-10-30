@@ -283,12 +283,35 @@ void mergeSlaveFiles(int numberOfSlaveProcess)
 		sprintf(nomeArq[i],"%s%d.txt",slave,i+1);
 	
 //	printf("qtd slave process %d\n",numberOfSlaveProcess);
+	/*
+	//Collect results from slave files
+	FILE *fr;         
+
+		
+	//I need to start reading the functions from file, here I go..!
+	fr = fopen ("RandomOperatorInput.txt", "rt");  
+		
+	int numFuncoes;
+	   	
+	char numElemen[100];
+	   
+	fgets(numElemen, sizeof(numElemen), fr);
+	numFuncoes = atoi(numElemen);
+	char line[numFuncoes][80];
+		
+	int j=0;
+	while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && j < numFuncoes ) j++;
+	
+	fclose(fr);  
+	
+	//Remove the tmp files created by my slaves
 	for(i=0;i<numberOfSlaveProcess;i++)
 	{
 //		printf("nome do arquivo %s\n",nomeArq[i]);
 		if (remove(nomeArq[i]) == -1)
 		 	perror("Error in deleting one of the tmp files");	
 	}
+*/
 }
 void performSlaveTasks(int myRank, int rc)
 {
@@ -594,6 +617,9 @@ void* tPerformSlaveWriterTasks(void* data)
 	
 	char slave[9] = "tmpslave\0";
 	char nomeArq[80];
+	char qtdFunc[17];
+	
+	itoa(sTasksData.sizeSlaveArray,qtdFunc,10); //conversao para decimal
 
 	//Define file name as slave<slaveRank>.txt
 	sprintf(nomeArq,"%s%d.txt",slave,sTasksData.myRank);
@@ -604,6 +630,8 @@ void* tPerformSlaveWriterTasks(void* data)
   		exit(1);
   	}
 	/* Se nao houve erro, imprime no arquivo, fecha ...*/
+	
+		fprintf(p,"%s\n",qtdFunc); //Amount of functions in tmp file, used by the file merger on master process
 	for(i=0;i<sTasksData.sizeSlaveArray;i++)
 		fprintf(p,"%s\n",sTasksData.result[i]);
 	fclose(p);
