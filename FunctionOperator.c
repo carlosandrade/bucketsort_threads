@@ -1,13 +1,16 @@
 /**
 Ideia principal desse codigo:
-Author: Carlos Andrade
-<Isso ja foi modificado consideravelmente, preciso reescrever>
+Dupla do Trabalho: Carlos Andrade, Rogerio Bastos
+<Isso ja foi modificado consideravelmente, e creio que ja ficou impossivel de se descrever com texto, vou enviar uma figura
+em anexo>
 
+===SOLUCAO ELIMINADA DEVIDO A REQUISICAO DE DADOS POR PARTE DO SLAVE==
 1. A estrutura principal de armazenamento é um vetor fixo cujo tamanho e o mesmo que o numero de funcoes.
 	1.1 Cada posicao do vetor deve conter um ponteiro para char cujo tamanho sera alocado dinamicamente.
 		1.1.1 O vetor char nada mais e que uma String que contem exclusivamente uma funcao de uma linha do arquivo
 2. Um processo root_rank 0 devera usar o vetor obtido em 1 e executar MPI_BCast enviando uma funcao para cada processo child
 3. Cada processo child devera ter 3 threads..
+===FIM DA SOLUCAO ELIMIINADA
 
 Obs: Por enquanto vou considerar que existem no codigo apenas um processo master e um processo slave dotado de 3 threads.
 
@@ -300,7 +303,7 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 //	printf("qtd slave process %d\n",numberOfSlaveProcess);
 	
 	//Collect results from slave files
-	FILE *fr;         
+	FILE *fr,*p;         
 	int numFuncoes;
 	char numElemen[100];
 	char line[numFuncoesTot][80];
@@ -329,11 +332,8 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 		}
 		fclose(fr);
 	}
-	for(i=0;i<numFuncoesTot;i++)
-		printf("Funcoes do merge: %s\n",line[i]);
-
-		
-
+//	for(i=0;i<numFuncoesTot;i++)
+//		printf("Funcoes do merge: %s\n",line[i]);
 	
 	//Remove the tmp files created by my slaves
 	
@@ -344,6 +344,27 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 		if (remove(nomeArq[i]) == -1)
 		 	perror("Error in deleting one of the tmp files");	
 	}
+	
+	//Finally, write the data into a single file!
+	
+	char nomeArqFinal[80];
+	
+	
+	sprintf(nomeArqFinal,"saida.txt");
+	
+	
+	if (!(p = fopen(nomeArqFinal,"w")))  /* Caso ocorra algum erro na abertura do arquivo..*/ 
+  	{                           /* o programa aborta automaticamente */
+  		printf("Erro! Impossivel abrir o arquivo!\n");
+  		exit(1);
+  	}
+	/* Se nao houve erro, imprime no arquivo, fecha ...*/
+	
+		//fprintf(p,"%s\n",qtdFunc); //Amount of functions in tmp file, used by the file merger on master process
+	for(i=0;i<numFuncoesTot;i++)
+		fprintf(p,"%s",line[i]);
+	fclose(p);
+	
 
 }
 void performSlaveTasks(int myRank, int rc)
@@ -657,6 +678,7 @@ void* tPerformSlaveWriterTasks(void* data)
 	itoa(sTasksData.sizeSlaveArray,qtdFunc,10); //conversao para decimal
 
 	//Define file name as slave<slaveRank>.txt
+	
 	sprintf(nomeArq,"%s%d.txt",slave,sTasksData.myRank);
 
 	if (!(p = fopen(nomeArq,"w")))  /* Caso ocorra algum erro na abertura do arquivo..*/ 
