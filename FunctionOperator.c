@@ -51,7 +51,7 @@ nao confunda a sinalizacao de um processo ao acabar o calculo e acabe lhe mandan
 
 void performMasterTasks(int numberOfSlavesMasterShouldListen,int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
 void performSlaveTasks(int myRank, int rc);
-int calculateFunction(char operador, char operando1, char operando2);
+int calculateFunction(char operador, char operando1[], char operando2[]);
 
 
 //Metodo de threads
@@ -62,9 +62,14 @@ void* tPerformSlaveRequesterTasks(void* data);
 void* tPerformSlaveCalculatorTasksOver();
 
 
+//to use itoa which is not portable
+void strreverse(char* begin, char* end);
+void itoa(int value, char* str, int base);
+
+
 //Necessary information among the threads
 		 struct slaveTasksData{
-			char **messageImReceiving; //Should be shared between the requester and the calculator
+			char result[150][80]; //Should be shared between the requester and the calculator
 			int results;//Should be shared between the calculator and the writer
 			int myRank; //Just for identification inside the thread of the current MPI_Process
 			int sizeSlaveArray;
@@ -256,7 +261,7 @@ void performSlaveTasks(int myRank, int rc)
 		
 		//Since I have the results, I may write it to the file
 		pthread_create( &thread_id[WRITER], NULL, tPerformSlaveWriterTasks, pointerSTasksData);	
-	
+
 		//Do note that I'll not exit until master tell me a FIM msg, so I'll never return to main and cast my slave barrier
 		//until that occurs according to the assignment specification
 	   	pthread_exit(NULL);
@@ -310,7 +315,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 		sTasksData.sizeSlaveArray = count/80; 
 //		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
 		
-
+/*
 		//Just a print to see whats going on
 		for(a=0;a < sTasksData.sizeSlaveArray ;a++)
 		{ 
@@ -320,7 +325,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 			}
 			printf("\n");
 		}						
-
+*/
 													
 		
 		//printf("Testando algo aqui2: %s\n",subarray[6]);													
@@ -337,12 +342,117 @@ void* tPerformSlaveRequesterTasks(void* data)
 }
 void* tPerformSlaveCalculatorTasks(void* data)
 {	
-	int a,b;
+	int a=0,b=0,i=0,res; //used for the method
+	char operand1[17],operand2[17],cRes[17],operator;
+	
+	
+	int k,j; //used for initialization and feeding the result bidimensional array from the structure
+	
+	//initialization of the bidimensional array result
+	for(k=0; k < 150 ; k++)
+	{
+		for(j=0;j<80;j++)
+		{
+			sTasksData.result[i][j] = ' ';
+		}
+	}
+	
+	for(k=0;k<17;k++)
+		operand1[k] = ' ';
+	for(k=0;k<17;k++)
+		operand2[k] = ' ';
+	for(k=0;k<17;k++)
+		cRes[k] = ' ';
+	
+
+	
 	for(a=0;a < sTasksData.sizeSlaveArray ;a++)
 	{ 
+		while(sTasksData.array[a][b] == ' ')	b++;
+		
+		//Operator goes first
+		operator = sTasksData.array[a][b];
+		//printf("VALOR RECEBIDO EM OPERATOR: %c\n",operator); isso ta ok
+		b++;
+		while(sTasksData.array[a][b] == ' ')	b++;
+		while(sTasksData.array[a][b] != ' ')
+		{
+			operand1[i]=sTasksData.array[a][b];
+			b++;
+			i++;
+			
+		}
+	
+		//printf("source: %s\n",sTasksData.array[a]);
+	//	printf("op1: %s\n",operand1);
+		//exit(0);
+		
+		i=0;
+		while(sTasksData.array[a][b] == ' ') b++;
+		
+			//	printf("op1: %s\n",operand1);
+		while((sTasksData.array[a][b] != ' ') && (sTasksData.array[a][b] != '\n') && (sTasksData.array[a][b] != EOF))
+		{
+			operand2[i]=sTasksData.array[a][b];
+			b++;
+			i++;
+		}
+	//			printf("op1: %s\n",operand1);
+	//	printf("op2: %s\n",operand2);
+//		exit(0);
 		//printf("Sejam dados: %c %c %c.\n",sTasksData.array[a][0],sTasksData.array[a][2],sTasksData.array[a][4]);
-		calculateFunction(sTasksData.array[a][0],sTasksData.array[a][2],sTasksData.array[a][4]);
-	}	
+//		printf("passando para calculateFunction: %c, %s, %s\n",operator,operand1,operand2);
+		res = calculateFunction(operator,operand1,operand2);
+		//printf("res em int %d\n",res);
+		itoa(res,cRes,10); //conversao para decimal
+		//printf("res: %s\n",cRes);
+		
+		//Results are added to the result structure	
+		j=0;
+		sTasksData.result[a][j] = operator;
+		j++;
+		sTasksData.result[a][j] = ' ';
+		j++;
+		for(k=0;(k<17) && (j<80) && operand1[k]!= ' ';k++,j++)
+		{
+			sTasksData.result[a][j] = operand1[k];	
+		}
+		sTasksData.result[a][j] = ' ';
+		j++;
+		for(k=0;(k<17) && (j<80) && operand2[k] != ' ';k++,j++)
+		{
+			sTasksData.result[a][j] = operand2[k];	
+		}
+		sTasksData.result[a][j] = ' ';
+		j++;
+		for(k=0;(k<17) && (j<80) && cRes[k]!= ' ';k++,j++)
+		{
+			sTasksData.result[a][j] = cRes[k];	
+		}
+		sTasksData.result[a][j] = '\n';
+		
+		//	b=0;i=0;
+	//	}
+		
+		
+		//for(k=0;k<17;k++)
+			//printf("op1 %c",operand1[k]);
+		//printf("op1: %s\n",operand1);
+	
+		//Just to see if all went ok
+		printf("Linha de resultado: %s\n",sTasksData.result[a]);
+		/*
+		printf("Valor da linha %d do arquivo resposta: ",a);
+		for(k=0;k<80;k++)	
+			printf("%c",sTasksData.result[a][k]);
+		printf("\n");
+		b=0; i=0;
+
+		*/
+		b=0;i=0;
+	}
+		
+		
 //	int i=0,j=0;
 //	for(i=0;i<)
 //	while(sTasksData.array[i][j])
@@ -354,13 +464,10 @@ void* tPerformSlaveCalculatorTasks(void* data)
 	//pthread_exit(NULL);
 	
 }
-int calculateFunction(char operador, char operando1, char operando2)
+int calculateFunction(char operador, char operando1[], char operando2[])
 { int op1,op2,res;
-	char oper1[1], oper2[1];
-	oper1[0] = operando1;
-	oper2[0] = operando2;
- 	op1 = atoi(oper1);
- 	op2 = atoi(oper2);
+ 	op1 = atoi(operando1);
+ 	op2 = atoi(operando2);
 
 	switch(operador)
 	{
@@ -383,10 +490,10 @@ int calculateFunction(char operador, char operando1, char operando2)
 			res = op1 % op2;
 		break;
 			default:
-			printf("Operador nao suportado, erro na funcao especificacada \n");
+			printf("Operador '%c' nao suportado, erro na funcao especificacada \n op1: %s, op2: %s, slave %d\n",operador,operando1,operando2,sTasksData.myRank);
 			exit(0);
 	}
-	return ;
+	return res;
 }
 void* tPerformSlaveCalculatorTasksOver()
 {
@@ -420,5 +527,71 @@ void* tPerformSlaveWriterTasks(void* data)
 	//Operacoes para salvar resultado em arquivo
 	
 	pthread_exit(NULL);
+	
+}
+
+
+
+/**
+	
+ * Ansi C "itoa" based on Kernighan & Ritchie's "Ansi C"
+	
+ * with slight modification to optimize for specific architecture:
+	
+ */
+	
+void strreverse(char* begin, char* end) {
+	
+	char aux;
+	
+	while(end>begin)
+	
+		aux=*end, *end--=*begin, *begin++=aux;
+	
+}
+	
+void itoa(int value, char* str, int base) {
+	
+	static char num[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	
+	char* wstr=str;
+	
+	int sign;
+	
+	div_t res;
+	
+
+	
+	// Validate base
+	
+	if (base<2 || base>35){ *wstr='\0'; return; }
+	
+
+	
+	// Take care of sign
+	
+	if ((sign=value) < 0) value = -value;
+	
+
+	
+	// Conversion. Number is reversed.
+	
+	do {
+	
+		res = div(value,base);
+	
+		*wstr++ = num[res.rem];
+	
+	}while(value=res.quot);
+	
+	if(sign<0) *wstr++='-';
+	
+	*wstr='\0';
+	
+
+	
+	// Reverse string
+	
+	strreverse(str,wstr-1);
 	
 }
