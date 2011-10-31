@@ -163,8 +163,15 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		printf("I am the master process and my rank is %d!\n",myRank);
 		
 		//I need to start reading the functions from file, here I go..!
-		fr = fopen ("RandomOperatorInput.txt", "rt");  /* open the file for reading */
 		
+		
+		if(!(fr=fopen("RandomOperatorInput.txt", "rt")))  /* open the file for reading */
+		{
+			printf("Erro! Impossivel abrir o arquivo!\n");
+		  	exit(1);	
+		}
+			
+
 	   	int numFuncoes;
 	   	
 	   	char numElemen[100];
@@ -284,8 +291,6 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		
 			
 		printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
-		
-
 }
 void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 {
@@ -316,9 +321,15 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 	{	
 		contFuncoesPorArq=0;
 		printf("valor de i: %d, e nome do arquivo: %s\n",i,nomeArq[i]);
-		fr = fopen (nomeArq[i], "rt");
-		if(fr!=NULL)
-			printf("fr e diferente de null!\n");  
+		
+		
+		if(!(fr=fopen (nomeArq[i], "rt")))
+		{
+			printf("Erro! Impossivel abrir o arquivo!\n");
+		  	exit(1);	
+		}
+		
+		
 		fgets(numElemen, sizeof(numElemen), fr);
 		numFuncoes = atoi(numElemen);
 		printf("numFuncos para i %d, sera %d\n",i,numFuncoes);
