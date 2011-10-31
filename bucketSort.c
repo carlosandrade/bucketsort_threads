@@ -1,13 +1,49 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#define ROOT_RANK 0   
+
 
 void splitElements(char ** unsorted);
 int decidePosicaoDoBucket(int elementoAtual,int numFuncoes);
 void separaElementosDoVetorNosBuckets(int *vetor,int bucket[300][16], int numProcessos, int posicao[], int numFuncoes);
+void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc);
+void performSlaveTasks(int myRank, int rc);
+
+int main(int argc, char *argv[]) 
+{
+	int numberOfSlavesMasterShouldListen, numberOfMPIProcesses, numberOfSlavesMasterShouldWaitForCalculation;
+	int myRank,rc;
+	
+	//Initialize the environment   
+	MPI_Init(&argc, &argv); 
+	
+	//How many processes are associated with my standard communicator MPI_COMM_WORLD?
+	MPI_Comm_size(MPI_COMM_WORLD,&numberOfMPIProcesses);   
+	numberOfSlavesMasterShouldListen = numberOfMPIProcesses - 1; //The master wont listen to himself.
+	numberOfSlavesMasterShouldWaitForCalculation = numberOfSlavesMasterShouldListen;
+	
+	//I need a rank for this communicator so this application can tell if I am the master or just some slave. Set my rank.
+	MPI_Comm_rank(MPI_COMM_WORLD,&myRank);   
+  
+	//Am I the root process or just one of it's slave?
+	if(myRank==ROOT_RANK)
+		performMasterTasks(numberOfSlavesMasterShouldListen,numberOfSlavesMasterShouldWaitForCalculation, myRank, rc);
+	else 
+		performSlaveTasks(myRank,rc);
+	
+	
+	return 0;	
 
 
-int main(argc,argv) 
+
+	
+	
+		
+
+}
+
+void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlavesMasterShouldWaitForCalculation, int myRank, int rc)
 {
 		//For file management
 		FILE *fr;            /* declare the file pointer */
@@ -52,7 +88,7 @@ int main(argc,argv)
 		int numElemenBucket[numProcessos];
 		separaElementosDoVetorNosBuckets(unsort,bucket,numProcessos,numElemenBucket,numFuncoes);
 
-		
+	
 	for(i=0;i<numProcessos;i++)
 	{
 		printf("size: %d, bucket[%d] = ",numElemenBucket[i],i);
@@ -60,10 +96,16 @@ int main(argc,argv)
 			printf("%d|",bucket[i][j]);
 		printf("\n");
 	}
+	
 		
-		
-	return 0;
 }
+
+void performSlaveTasks(int myRank, int rc)
+{
+
+}
+
+
 void separaElementosDoVetorNosBuckets(int *vetor,int bucket[300][16], int numProcessos, int posicao[16],int numFuncoes)
 {int i,j;
 	int posicaoBucket;
