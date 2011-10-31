@@ -160,7 +160,7 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//For file management
 		FILE *fr;            /* declare the file pointer */
 
-		printf("I am the master process and my rank is %d!\n",myRank);
+		//printf("I am the master process and my rank is %d!\n",myRank);
 		
 		//I need to start reading the functions from file, here I go..!
 		
@@ -188,13 +188,13 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//Alright, I, the master, am done loading all the text file. Now I need to separate the original data to my slaves.
 		
 		//Well, I must give each slave process the same or almost the same quantity to work on so:
-		for(j=0;j<numFuncoes;j++)
-			puts(line[j]);
+		//for(j=0;j<numFuncoes;j++)
+		//	puts(line[j]);
 		
 		if(numberOfSlaveProcess!=0)
 			sTasksData.sizeSlaveArray = numFuncoes/numberOfSlaveProcess;   
 			
-		printf("Aqui size salve array e: %d\n",sTasksData.sizeSlaveArray);
+		//printf("Aqui size salve array e: %d\n",sTasksData.sizeSlaveArray);
 
 		//Given that the amount of functions in this assignment is always more than the number of tasks..
 		if(sTasksData.sizeSlaveArray*numberOfSlaveProcess < numFuncoes)
@@ -222,14 +222,14 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		//alocando o vetor de resultado (contera as posicoes onde se encontra X)  int res[n]
 		//res = (int *) calloc(n,sizeof(int));  
 		
-		if(numberOfSlaveProcess!=0)
-			printf("Sub-vector sizes: %d\n",sTasksData.sizeSlaveArray);
+		//if(numberOfSlaveProcess!=0)
+		//	printf("Sub-vector sizes: %d\n",sTasksData.sizeSlaveArray);
 		
 		
 
 		//I shall be listening all my slave requests until they're all satisfied. One slave communicate with me exacly ONCE.
 		while(numberOfSlavesMasterShouldListen > 0)
-			{	printf("NumberOfRemainingSlaves: %d\n",numberOfSlavesMasterShouldListen);
+			{	//printf("NumberOfRemainingSlaves: %d\n",numberOfSlavesMasterShouldListen);
 
 			//Since I'm the master, I should send my slaves data to work on ONLY WHEN they request it.
 		  	rc = MPI_Recv(&messageImReceiving, 1, MPI_CHAR, MPI_ANY_SOURCE, TAG, MPI_COMM_WORLD, &status);
@@ -237,7 +237,7 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 			//Which of those slaves sent me the request?
 			rc = MPI_Get_count(&status, MPI_FLOAT, &receivedAmountOfDataFromSlave);
 			slaveRankWhoSentTheRequest = status.MPI_SOURCE;
-			printf("The slave rank who sent the request was: %d\n",slaveRankWhoSentTheRequest);
+			//printf("The slave rank who sent the request was: %d\n",slaveRankWhoSentTheRequest);
 
 			//I should answer him properly..
 			destinationRank = slaveRankWhoSentTheRequest;
@@ -249,14 +249,14 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 				slaveNeedExtraTask--;
 				
 				//I should also be careful not to send the same part of the data to different slave processes so..
-				printf("Valor de currentDataPosition: %d\n",currentDataPosition);
+				//printf("Valor de currentDataPosition: %d\n",currentDataPosition);
 				currentDataPosition += sTasksData.sizeSlaveArray+1;
 			}
 			else
 			{
 		  		rc = MPI_Send(&line[currentDataPosition], sTasksData.sizeSlaveArray*80, MPI_CHAR, destinationRank, TAG, MPI_COMM_WORLD);				
 				//I should also be careful not to send the same part of the data to different slave processes so..
-				printf("Valor de currentDataPosition: %d\n",currentDataPosition);
+				//printf("Valor de currentDataPosition: %d\n",currentDataPosition);
 				currentDataPosition += sTasksData.sizeSlaveArray;
 			}
 
@@ -275,14 +275,14 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		  	rc = MPI_Recv(&messageImReceiving, 1, MPI_CHAR, MPI_ANY_SOURCE, TAGFIM, MPI_COMM_WORLD, &status);
 			numberOfSlavesMasterShouldWaitForCalculation--;
 			
-			printf("Number of calculation tasks from my slaves remaining: %d\n",numberOfSlavesMasterShouldWaitForCalculation);
+			//printf("Number of calculation tasks from my slaves remaining: %d\n",numberOfSlavesMasterShouldWaitForCalculation);
 		}
 		//Only after all my slaves finished calculation I should tell them that it is over and that they must cast a barrier
-		printf("At this point, I, the master process know that all calculation is over by my slave tasks as they notified me\n");
+		//printf("At this point, I, the master process know that all calculation is over by my slave tasks as they notified me\n");
 		messageImSending = 'f';
 		for(slaveRank= 1; slaveRank <= numberOfSlaveProcess ; slaveRank++)
 		{
-			printf("Issuing FIM message for slave process whose rank is: %d\n",slaveRank);
+			//printf("Issuing FIM message for slave process whose rank is: %d\n",slaveRank);
 			rc = MPI_Send(&messageImSending, numberOfMessageCopies, MPI_CHAR, slaveRank, TAGFIM, MPI_COMM_WORLD);
 		}
 		
@@ -290,7 +290,7 @@ void performMasterTasks(int numberOfSlavesMasterShouldListen, int numberOfSlaves
 		sTasksData.numFuncoesTot = numFuncoes;
 		
 			
-		printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
+		//printf("I, the Master Process, finished issuing all the FIM messages to all my slaves so they may execute barrier \n");
 }
 void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 {
@@ -302,8 +302,8 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 	for(i=0;i<numberOfSlaveProcess;i++)
 		sprintf(nomeArq[i],"%s%d.txt",slave,i+1);
 		
-	for(i=0;i<numberOfSlaveProcess;i++)
-		printf("%s\n",nomeArq[i]);
+	//for(i=0;i<numberOfSlaveProcess;i++)
+	//	printf("%s\n",nomeArq[i]);
 	
 //	printf("qtd slave process %d\n",numberOfSlaveProcess);
 	
@@ -316,11 +316,11 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 
 
 	//I need to start reading the functions from my slave tmpfiles, here I go..!	
-	printf("number of slaves process: %d\n",numberOfSlaveProcess);
+	//printf("number of slaves process: %d\n",numberOfSlaveProcess);
 	for(i=0;i<numberOfSlaveProcess;i++)
 	{	
 		contFuncoesPorArq=0;
-		printf("valor de i: %d, e nome do arquivo: %s\n",i,nomeArq[i]);
+		//printf("valor de i: %d, e nome do arquivo: %s\n",i,nomeArq[i]);
 		
 		
 		if(!(fr=fopen (nomeArq[i], "rt")))
@@ -332,12 +332,12 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 		
 		fgets(numElemen, sizeof(numElemen), fr);
 		numFuncoes = atoi(numElemen);
-		printf("numFuncos para i %d, sera %d\n",i,numFuncoes);
+		//printf("numFuncos para i %d, sera %d\n",i,numFuncoes);
 //		fgets(line[j], sizeof(numElemen), fr);
 //		printf("Segundo fgets botou em linej: %s\n",line[j]);
 		while( (fgets(line[j], sizeof(numElemen), fr) != NULL) && contFuncoesPorArq < numFuncoes )
 		{
-			printf("o que esta sendo gravado em linej: %s\n",line[j]);
+			//printf("o que esta sendo gravado em linej: %s\n",line[j]);
 			j++;
 			contFuncoesPorArq++;
 		}
@@ -380,7 +380,7 @@ void mergeSlaveFiles(int numberOfSlaveProcess,int numFuncoesTot)
 }
 void performSlaveTasks(int myRank, int rc)
 {
-		printf("I am a slave and my rank is %d!\n",myRank);
+		//printf("I am a slave and my rank is %d!\n",myRank);
 		
 		struct slaveTasksData * pointerSTasksData = &sTasksData;
 		pointerSTasksData->myRank = myRank;
@@ -413,7 +413,7 @@ void performSlaveTasks(int myRank, int rc)
 		//Do note that I'll not exit until master tell me a FIM msg, so I'll never return to main and cast my slave barrier
 		//until that occurs according to the assignment specification
 	   //	pthread_exit(NULL);
-		printf("I SAW THE END OF IT, says slave whose rank is %d !\n",sTasksData.myRank);
+		//printf("I SAW THE END OF IT, says slave whose rank is %d !\n",sTasksData.myRank);
 		
 }
 void* tPerformSlaveRequesterTasks(void* data)
@@ -461,7 +461,7 @@ void* tPerformSlaveRequesterTasks(void* data)
 		
 		//With this, all the threads of this proces 
 		sTasksData.sizeSlaveArray = count/80;  //Because I know the sender always does count = 80 * something this is okay
-		printf("I am the task %d, and the amount of functions I need to deal with are: %d\n",sTasksData.myRank,sTasksData.sizeSlaveArray);
+		//printf("I am the task %d, and the amount of functions I need to deal with are: %d\n",sTasksData.myRank,sTasksData.sizeSlaveArray);
 //		printf("valor de subarray de rank : %d\n",sTasksData.myRank)			;
 		
 /*
@@ -579,7 +579,7 @@ void* tPerformSlaveCalculatorTasks(void* data)
 					//printf("value = %s, j= %d\n",sTasksData.result[a],j);
 			sTasksData.result[a][j] = cRes[k];	
 		}
-		puts(sTasksData.result[a]);
+		//puts(sTasksData.result[a]);
 		sTasksData.result[a][j] = '\n';
 		
 		//	b=0;i=0;
@@ -675,8 +675,8 @@ void* tPerformSlaveWriterTasks(void* data)
 {
 	int i=0;
 
-	for(i=0;i<sTasksData.sizeSlaveArray;i++)
-		printf("Linha de resultado no writer: %s\n",sTasksData.result[i]);			
+	//for(i=0;i<sTasksData.sizeSlaveArray;i++)
+		//printf("Linha de resultado no writer: %s\n",sTasksData.result[i]);			
 		
 	//Operacoes para salvar resultado em arquivo
 	

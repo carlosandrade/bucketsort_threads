@@ -11,18 +11,27 @@ public class RandomCreator{
     {
         //Gera vetor de numeros aleatorios
          int valor;
-         int qtdElementosVetor = 100000;
+         int qtdElementosVetor = 150;
          Random generator = new Random();
-         
-         
+         int g;
+		int variacao = 50;
+		
+		
+		
+while(variacao <= 300)
+{	
+      for(g=0;g<20;g++)
+
+		{   
          try{
            // Create file 
-           FileWriter fstream = new FileWriter("randomInput3.txt");
+			System.out.println(g+"_"+Integer.toString(variacao)+".txt");
+           FileWriter fstream = new FileWriter(g+"_"+Integer.toString(variacao)+".txt");
            BufferedWriter out = new BufferedWriter(fstream);
            
-           out.write(Integer.toString(qtdElementosVetor));
+           out.write(Integer.toString(variacao));
            out.write("\n");
-           for(int i=0;i<qtdElementosVetor;i++)
+           for(int i=0;i<variacao;i++)
            {
                valor = (generator.nextInt(5001+5000)-5000); //Gera um valor no intervalo de 0 a 10000 e subtrai -5000
                out.write(Integer.toString(valor));
@@ -35,4 +44,9 @@ public class RandomCreator{
           System.err.println("Error: " + e.getMessage());
           }
         }
+
+		variacao+= 25;
+
+}
+}
 }
